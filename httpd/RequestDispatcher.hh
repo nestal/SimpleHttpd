@@ -32,7 +32,7 @@ public:
 	}
 	void SetDefault(RequestHandler handler);
 
-	void HandleRequest(const ConnectionPtr& c) const noexcept ;
+	BrightFuture::future<Response> HandleRequest(const ConnectionPtr& c) const noexcept ;
 
 private:
 	std::map<std::string, RequestHandler> m_map;

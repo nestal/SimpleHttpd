@@ -113,7 +113,7 @@ std::vector<const_buffer> Response::ToBuffers()
 		buffer(m_content_length),
 		buffer(m_other_headers),
 		buffer(misc_strings::crlf),
-		m_content.data()
+		buffer(m_content)
 	};
 }
 
@@ -253,14 +253,14 @@ void Response::SetContentType(const std::string& type)
 	m_content_type = "Content-Type: " + type + "\r\n";
 }
 
-std::streambuf& Response::Content()
-{
-	return m_content;
-}
-
 void Response::AddHeader(const std::string& header, const std::string& value)
 {
 	m_other_headers += (header + ": " + value + "\r\n");
+}
+
+void Response::SetContent(std::vector<char>&& buf)
+{
+	m_content = std::move(buf);
 }
 	
 } // end of namespace

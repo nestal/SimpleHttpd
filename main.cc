@@ -10,12 +10,22 @@ int main()
 	boost::asio::io_service ios;
 
 	http::Server s{ios, "0.0.0.0", "8080"};
-	s.SetDefaultHandler([](auto&& conn){
-		conn->Response().SetStatus(http::ResponseStatus::ok);
+	s.SetDefaultHandler([](auto&& conn)
+	{
+		http::Response rep;
+		rep.SetStatus(http::ResponseStatus::ok);
 
-		std::ostream os{&conn->Response().Content()};
-		os << "hello";
-		conn->Reply();
+		boost::asio::streambuf buf;
+		std::ostream os{&buf};
+		os << "hello promise!";
+		
+		std::vector<char> vec(buf.size());
+		buffer_copy(boost::asio::buffer(vec), buf.data());
+		rep.SetContent(std::move(vec));
+		
+		BrightFuture::promise<http::Response> promise;
+		promise.set_value(std::move(rep));
+		return promise.get_future();
 	});
 
 	ios.run();

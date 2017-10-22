@@ -14,7 +14,6 @@
 #include "ConnectionManager.hh"
 
 #include "RequestDispatcher.hh"
-#include "RequestHandler.hh"
 
 #include "Request.hh"
 #include "RequestParser.hh"
@@ -39,8 +38,8 @@ public:
 	void Stop();
 	
 	const http::Request&  Request() override {return m_req;}
-	http::Response& Response() override {return m_rep;}
-	void Reply() override;
+//	http::Response& Response() override {return m_rep;}
+	void Reply(Response&& rep);
 	io_service& IoService() override
 	{
 		return m_socket.get_io_service();
@@ -99,12 +98,16 @@ void ConnectionManager::Entry::Start()
 					m_req, m_read_buffer.begin(), m_read_buffer.begin() + count);
 				
 				if (result == RequestParser::good)
-					m_handler.HandleRequest(self);
+					m_handler.HandleRequest(self).then([this, self=shared_from_this()](BrightFuture::future<Response> fut_rep)
+					{
+						Reply(fut_rep.get());
+					});
 				
 				else if (result == RequestParser::bad)
 				{
-					m_rep.SetStatus(ResponseStatus::bad_request);
-					Reply();
+					Response rep;
+					rep.SetStatus(ResponseStatus::bad_request);
+					Reply(std::move(rep));
 				}
 				else
 					Start();
@@ -116,10 +119,10 @@ void ConnectionManager::Entry::Start()
 }
 
 
-void ConnectionManager::Entry::Reply()
+void ConnectionManager::Entry::Reply(Response&& rep)
 {
 	auto self = shared_from_this();
-	async_write(m_socket, m_rep.ToBuffers(),
+	async_write(m_socket, rep.ToBuffers(),
 		[this, self](boost::system::error_code ec, std::size_t c)
 		{
 			if (!ec)

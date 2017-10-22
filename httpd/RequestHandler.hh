@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include "BrightFuture.hh"
+
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
@@ -55,7 +57,7 @@ public:
 	 *
 	 * \return http::Response object to be sent to the client
 	 */
-	virtual http::Response& Response() = 0;
+//	virtual http::Response& Response() = 0;
 	
 	/**
 	 * \brief Sends the response to the client
@@ -68,18 +70,19 @@ public:
 	 * replies. You can call an asynchronous function on the io_service
 	 * returned by IoService() and call Reply() in its completion callback.
 	 */
-	virtual void Reply() = 0;
+//	virtual void Reply() = 0;
 	
-	/**
-	 * \brief Returns the io_service that runs the Server
-	 *
-	 * It is provided for convenient. It is typically implemented
-	 * by calling get_io_service() on the socket. Ultimately this
-	 * is the same io_service you passed to Server's constructor.
-	 *
-	 * \return  The io_service that runs the Server
-	 * \sa Server::IoService()
-	 */
+//	virtual std::shared_ptr<Connection> SharedFromThis() = 0;
+//	virtual std::shared_ptr<const Connection> SharedFromThis() const = 0;
+
+	/// \brief Returns the io_service that runs the Server
+	///
+	/// It is provided for convenient. It is typically implemented
+	/// by calling get_io_service() on the socket. Ultimately this
+	/// is the same io_service you passed to Server's constructor.
+	///
+	/// \return  The io_service that runs the Server
+	/// \sa Server::IoService()
 	virtual boost::asio::io_service& IoService() = 0;
 	virtual boost::asio::ip::tcp::endpoint Client() const = 0;
 	virtual boost::asio::ip::tcp::endpoint Local() const = 0;
@@ -118,17 +121,7 @@ using ConnectionPtr = std::shared_ptr<Connection>;
  * in the lambda callback function. Otherwise the Connection objects will
  * be destroyed if the connection is closed by peer or timed out.
  */
-using RequestHandler = std::function<void(const ConnectionPtr&)>;
+using RequestHandler = std::function<BrightFuture::future<Response>(const ConnectionPtr&)>;
 
-class RequestHandlingInterface
-{
-public:
-	virtual ~RequestHandlingInterface() = default;
-	
-	virtual void OnRequestHeader(const std::string& header, const std::string& value) = 0;
-	virtual void OnRequestHeaderReceived() = 0;
-	virtual void OnRequestContent(const std::uint8_t *data, std::size_t size) = 0;
-	virtual void OnRequestReceived() = 0;
-};
 
 } // end of namespace

@@ -50,15 +50,16 @@ class Response
 public:
 	/// Get a stock reply.
 	Response() = default;
-	Response(const Response&) = delete;
-	Response& operator=(const Response&) = delete;
+	Response(const Response&) = default;
+	Response& operator=(const Response&) = default;
+	Response(Response&&) = default;
+	Response& operator=(Response&&) = default;
 
 	void SetStatus(ResponseStatus s);
 	void SetContentType(const std::string& type);
 	void AddHeader(const std::string& header, const std::string& value);
 
-	std::streambuf& Content();
-	void SetContentFile(const boost::filesystem::path& file);
+	void SetContent(std::vector<char>&& buf);
 	
 	/// Convert the reply into a vector of buffers. The buffers do not own the
 	/// underlying memory blocks, therefore the reply object must remain valid and
@@ -77,7 +78,7 @@ private:
 	std::string m_other_headers;
 	
 	/// The content to be sent in the reply.
-	boost::asio::streambuf m_content;
+	std::vector<char> m_content;
 };
 
 } // end of namespace

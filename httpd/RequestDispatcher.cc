@@ -20,29 +20,16 @@
 
 namespace http {
 
-void RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
+BrightFuture::future<Response> RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
 {
 	assert(c);
 	
-	try
-	{
-		UriString uri{c->Request().Uri()};
-		
-		auto it = m_map.find(uri[0]);
-		auto& handler = (it == m_map.end() ? m_default : it->second);
-		handler(c);
-	}
-	catch (std::exception& e)
-	{
-		c->Response().SetStatus(ResponseStatus::internal_server_error);
-		
-		std::ostream os{&c->Response().Content()};
-		os << e.what();
-	}
-	catch (...)
-	{
-		c->Response().SetStatus(ResponseStatus::internal_server_error);
-	}
+	UriString uri{c->Request().Uri()};
+	
+	auto it = m_map.find(uri[0]);
+	auto& handler = (it == m_map.end() ? m_default : it->second);
+	return handler(c);
+//	c->Response().SetStatus(ResponseStatus::internal_server_error);
 }
 
 void RequestDispatcher::SetDefault(RequestHandler handler)

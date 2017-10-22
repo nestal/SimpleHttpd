@@ -1,0 +1,3 @@
+[submodule "BrightFuture"]
+	path = BrightFuture
+	url = https://github.com/nestal/BrightFuture.git

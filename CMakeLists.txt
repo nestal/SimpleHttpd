@@ -14,6 +14,7 @@ file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc)
 
 include_directories(
     ${Boost_INCLUDE_DIR}
+	${PROJECT_SOURCE_DIR}/BrightFuture
 )
 
 add_library(httpdlib
