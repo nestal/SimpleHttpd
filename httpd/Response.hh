@@ -20,40 +20,40 @@
 
 namespace http {
 
+/// A reply to be sent to a client.
+/// The status of the reply.
+enum class ResponseStatus
+{
+	ok = 200,
+	created = 201,
+	accepted = 202,
+	no_content = 204,
+	multiple_choices = 300,
+	moved_permanently = 301,
+	moved_temporarily = 302,
+	not_modified = 304,
+	bad_request = 400,
+	unauthorized = 401,
+	forbidden = 403,
+	not_found = 404,
+	internal_server_error = 500,
+	not_implemented = 501,
+	bad_gateway = 502,
+	service_unavailable = 503
+} ;
+
 /**
  * \brief HTTP Response builder
  */
 class Response
 {
 public:
-	/// A reply to be sent to a client.
-	/// The status of the reply.
-	enum class Status
-	{
-		ok = 200,
-		created = 201,
-		accepted = 202,
-		no_content = 204,
-		multiple_choices = 300,
-		moved_permanently = 301,
-		moved_temporarily = 302,
-		not_modified = 304,
-		bad_request = 400,
-		unauthorized = 401,
-		forbidden = 403,
-		not_found = 404,
-		internal_server_error = 500,
-		not_implemented = 501,
-		bad_gateway = 502,
-		service_unavailable = 503
-	} ;
-
 	/// Get a stock reply.
 	Response() = default;
 	Response(const Response&) = delete;
 	Response& operator=(const Response&) = delete;
 
-	void SetStatus(Status s);
+	void SetStatus(ResponseStatus s);
 	void SetContentType(const std::string& type);
 	void AddHeader(const std::string& header, const std::string& value);
 
@@ -66,7 +66,7 @@ public:
 	std::vector<boost::asio::const_buffer> ToBuffers();
 
 private:
-	Status m_status = Status::ok;
+	ResponseStatus m_status{ResponseStatus::ok};
 
 	/// The header line of "Content-Length:"
 	std::string m_content_length;

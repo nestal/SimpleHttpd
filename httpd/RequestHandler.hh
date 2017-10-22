@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <memory>
+#include <cstdint>
 
 namespace http {
 
@@ -118,5 +119,16 @@ using ConnectionPtr = std::shared_ptr<Connection>;
  * be destroyed if the connection is closed by peer or timed out.
  */
 using RequestHandler = std::function<void(const ConnectionPtr&)>;
+
+class RequestHandlingInterface
+{
+public:
+	virtual ~RequestHandlingInterface() = default;
+	
+	virtual void OnRequestHeader(const std::string& header, const std::string& value) = 0;
+	virtual void OnRequestHeaderReceived() = 0;
+	virtual void OnRequestContent(const std::uint8_t *data, std::size_t size) = 0;
+	virtual void OnRequestReceived() = 0;
+};
 
 } // end of namespace

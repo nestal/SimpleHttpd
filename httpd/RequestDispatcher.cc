@@ -34,14 +34,14 @@ void RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
 	}
 	catch (std::exception& e)
 	{
-		c->Response().SetStatus(Response::Status::internal_server_error);
+		c->Response().SetStatus(ResponseStatus::internal_server_error);
 		
 		std::ostream os{&c->Response().Content()};
 		os << e.what();
 	}
 	catch (...)
 	{
-		c->Response().SetStatus(Response::Status::internal_server_error);
+		c->Response().SetStatus(ResponseStatus::internal_server_error);
 	}
 }
 

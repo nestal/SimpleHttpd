@@ -8,6 +8,7 @@ if (MSVC)
 endif()
 
 find_package(Boost COMPONENTS system date_time regex filesystem REQUIRED)
+find_package(Threads REQUIRED)
 
 file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc)
 
@@ -20,10 +21,10 @@ add_library(httpdlib
     )
 
 target_link_libraries(httpdlib
-    ${CMAKE_THREAD_LIBS_INIT}
+    Threads::Threads
     ${Boost_LIBRARIES}
-    )
+)
 
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES main.cc)
 add_executable(simpleWeb ${SOURCE_FILES})
 target_link_libraries(simpleWeb httpdlib)

@@ -51,43 +51,42 @@ const std::string bad_gateway =
 const std::string service_unavailable =
 	"HTTP/1.0 503 Service Unavailable\r\n";
 
-const_buffer ToBuffer(Response::Status status)
+const_buffer ToBuffer(ResponseStatus status)
 {
 	switch (status)
 	{
-	case Response::Status::ok:
+	case ResponseStatus::ok:
 		return buffer(ok);
-	case Response::Status::created:
+	case ResponseStatus::created:
 		return buffer(created);
-	case Response::Status::accepted:
+	case ResponseStatus::accepted:
 		return buffer(accepted);
-	case Response::Status::no_content:
+	case ResponseStatus::no_content:
 		return buffer(no_content);
-	case Response::Status::multiple_choices:
+	case ResponseStatus::multiple_choices:
 		return buffer(multiple_choices);
-	case Response::Status::moved_permanently:
+	case ResponseStatus::moved_permanently:
 		return buffer(moved_permanently);
-	case Response::Status::moved_temporarily:
+	case ResponseStatus::moved_temporarily:
 		return buffer(moved_temporarily);
-	case Response::Status::not_modified:
+	case ResponseStatus::not_modified:
 		return buffer(not_modified);
-	case Response::Status::bad_request:
+	case ResponseStatus::bad_request:
 		return buffer(bad_request);
-	case Response::Status::unauthorized:
+	case ResponseStatus::unauthorized:
 		return buffer(unauthorized);
-	case Response::Status::forbidden:
+	case ResponseStatus::forbidden:
 		return buffer(forbidden);
-	case Response::Status::not_found:
+	case ResponseStatus::not_found:
 		return buffer(not_found);
-	case Response::Status::not_implemented:
+	case ResponseStatus::not_implemented:
 		return buffer(not_implemented);
-	case Response::Status::bad_gateway:
+	case ResponseStatus::bad_gateway:
 		return buffer(bad_gateway);
-	case Response::Status::service_unavailable:
+	case ResponseStatus::service_unavailable:
 		return buffer(service_unavailable);
 	
-	case Response::Status::internal_server_error:
-	default:
+	case ResponseStatus::internal_server_error:
 		break;
 	}
 	
@@ -201,41 +200,41 @@ const char service_unavailable[] =
 		"<body><h1>503 Service Unavailable</h1></body>"
 		"</html>";
 
-std::string to_string(Response::Status status)
+std::string to_string(ResponseStatus status)
 {
 	switch (status)
 	{
-	case Response::Status::ok:
+	case ResponseStatus::ok:
 		return ok;
-	case Response::Status::created:
+	case ResponseStatus::created:
 		return created;
-	case Response::Status::accepted:
+	case ResponseStatus::accepted:
 		return accepted;
-	case Response::Status::no_content:
+	case ResponseStatus::no_content:
 		return no_content;
-	case Response::Status::multiple_choices:
+	case ResponseStatus::multiple_choices:
 		return multiple_choices;
-	case Response::Status::moved_permanently:
+	case ResponseStatus::moved_permanently:
 		return moved_permanently;
-	case Response::Status::moved_temporarily:
+	case ResponseStatus::moved_temporarily:
 		return moved_temporarily;
-	case Response::Status::not_modified:
+	case ResponseStatus::not_modified:
 		return not_modified;
-	case Response::Status::bad_request:
+	case ResponseStatus::bad_request:
 		return bad_request;
-	case Response::Status::unauthorized:
+	case ResponseStatus::unauthorized:
 		return unauthorized;
-	case Response::Status::forbidden:
+	case ResponseStatus::forbidden:
 		return forbidden;
-	case Response::Status::not_found:
+	case ResponseStatus::not_found:
 		return not_found;
-	case Response::Status::internal_server_error:
+	case ResponseStatus::internal_server_error:
 		return internal_server_error;
-	case Response::Status::not_implemented:
+	case ResponseStatus::not_implemented:
 		return not_implemented;
-	case Response::Status::bad_gateway:
+	case ResponseStatus::bad_gateway:
 		return bad_gateway;
-	case Response::Status::service_unavailable:
+	case ResponseStatus::service_unavailable:
 		return service_unavailable;
 	default:
 		return internal_server_error;
@@ -244,7 +243,7 @@ std::string to_string(Response::Status status)
 
 } // namespace stock_replies
 
-void Response::SetStatus(Response::Status s)
+void Response::SetStatus(ResponseStatus s)
 {
 	m_status = s;
 }

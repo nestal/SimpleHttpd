@@ -103,7 +103,7 @@ void ConnectionManager::Entry::Start()
 				
 				else if (result == RequestParser::bad)
 				{
-					m_rep.SetStatus(Response::Status::bad_request);
+					m_rep.SetStatus(ResponseStatus::bad_request);
 					Reply();
 				}
 				else
