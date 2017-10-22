@@ -12,16 +12,13 @@ int main()
 	http::Server s{ios, "0.0.0.0", "8080"};
 	s.SetDefaultHandler([](auto&& conn)
 	{
-		http::Response rep;
-		rep.SetStatus(http::ResponseStatus::ok);
+		http::Response rep{http::ResponseStatus::ok};
 
 		boost::asio::streambuf buf;
 		std::ostream os{&buf};
 		os << "hello promise!";
 		
-		std::vector<char> vec(buf.size());
-		buffer_copy(boost::asio::buffer(vec), buf.data());
-		rep.SetContent(std::move(vec));
+		rep.SetContent(buf);
 		
 		BrightFuture::promise<http::Response> promise;
 		promise.set_value(std::move(rep));

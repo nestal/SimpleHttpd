@@ -262,5 +262,14 @@ void Response::SetContent(std::vector<char>&& buf)
 {
 	m_content = std::move(buf);
 }
-	
+
+void Response::SetContent(const boost::asio::streambuf& buf)
+{
+	buffer_copy(boost::asio::buffer(m_content), buf.data());
+}
+
+Response::Response(ResponseStatus s) : m_status{s}
+{
+}
+
 } // end of namespace
