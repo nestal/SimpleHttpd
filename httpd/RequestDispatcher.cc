@@ -29,12 +29,11 @@ BrightFuture::future<Response> RequestDispatcher::HandleRequest(const Connection
 	auto it = m_map.find(uri[0]);
 	auto& handler = (it == m_map.end() ? m_default : it->second);
 	return handler(c);
-//	c->Response().SetStatus(ResponseStatus::internal_server_error);
 }
 
 void RequestDispatcher::SetDefault(RequestHandler handler)
 {
-	m_default = handler;
+	m_default = std::move(handler);
 }
 
 } // end of namespace

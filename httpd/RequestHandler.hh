@@ -47,33 +47,6 @@ public:
 	 * \return Request object of the request
 	 */
 	virtual const http::Request&  Request() = 0;
-	
-	/**
-	 * \brief Builds the Response to be sent to the client
-	 *
-	 * Use the Response object returned by this function to build the
-	 * HTTP response. Call Response::SetStatus() to assign the HTTP response
-	 * status (e.g. 404 not found) of the response.
-	 *
-	 * \return http::Response object to be sent to the client
-	 */
-//	virtual http::Response& Response() = 0;
-	
-	/**
-	 * \brief Sends the response to the client
-	 *
-	 * The response will not be sent to the client until you call this
-	 * function. That means if you don't call this, the browser client
-	 * will timeout.
-	 *
-	 * The purpose of providing this function is to allow asynchronous
-	 * replies. You can call an asynchronous function on the io_service
-	 * returned by IoService() and call Reply() in its completion callback.
-	 */
-//	virtual void Reply() = 0;
-	
-//	virtual std::shared_ptr<Connection> SharedFromThis() = 0;
-//	virtual std::shared_ptr<const Connection> SharedFromThis() const = 0;
 
 	/// \brief Returns the io_service that runs the Server
 	///

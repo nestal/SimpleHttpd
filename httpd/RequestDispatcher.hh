@@ -35,7 +35,7 @@ public:
 	BrightFuture::future<Response> HandleRequest(const ConnectionPtr& c) const noexcept ;
 
 private:
-	std::map<std::string, RequestHandler> m_map;
+	std::unordered_map<std::string, RequestHandler> m_map;
 
 	RequestHandler m_default;
 };
