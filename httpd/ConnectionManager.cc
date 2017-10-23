@@ -38,7 +38,6 @@ public:
 	void Stop();
 	
 	const http::Request&  Request() override {return m_req;}
-//	http::Response& Response() override {return m_rep;}
 	void Reply(Response&& rep);
 	io_service& IoService() override
 	{
@@ -98,7 +97,7 @@ void ConnectionManager::Entry::Start()
 					m_req, m_read_buffer.begin(), m_read_buffer.begin() + count);
 				
 				if (result == RequestParser::good)
-					m_handler.HandleRequest(self).then([this, self=shared_from_this()](BrightFuture::future<Response> fut_rep)
+					m_handler.HandleRequest(self).then([this, self=shared_from_this()](auto fut_rep)
 					{
 						Reply(fut_rep.get());
 					});

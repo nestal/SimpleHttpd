@@ -90,9 +90,9 @@ private:
 	/// The next socket to be accepted.
 	boost::asio::ip::tcp::socket m_socket;
 
-	ConnectionManager   m_conn;
+	ConnectionManager       m_conn;
 
-	RequestDispatcher     m_handlers;
+	RequestDispatcher       m_handlers;
 };
 
 } // end of namespace

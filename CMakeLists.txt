@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-project(simpleWeb)
+project(SimpleHttp)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -27,5 +27,5 @@ target_link_libraries(httpdlib
 )
 
 set(SOURCE_FILES main.cc)
-add_executable(simpleWeb ${SOURCE_FILES})
-target_link_libraries(simpleWeb httpdlib)
+add_executable(SimpleHttp ${SOURCE_FILES})
+target_link_libraries(SimpleHttp httpdlib)
