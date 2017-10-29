@@ -83,7 +83,7 @@ void Server::DoAwaitStop()
 
 void Server::SetDefaultHandler(RequestHandler handler)
 {
-	m_handlers.SetDefault(handler);
+	m_handlers.SetDefault(std::move(handler));
 }
 
 /**
