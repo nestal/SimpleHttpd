@@ -29,3 +29,5 @@ target_link_libraries(httpdlib
 set(SOURCE_FILES main.cc)
 add_executable(SimpleHttp ${SOURCE_FILES})
 target_link_libraries(SimpleHttp httpdlib)
+
+add_subdirectory(BrightFuture)
