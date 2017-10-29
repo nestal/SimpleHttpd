@@ -38,6 +38,8 @@ Server::Server(io_service& ios, const std::string& address, const std::string& p
 {
 	DoAwaitStop();
 
+//	use_service<BrightFuture::BoostAsioExecutorService>(ios).Get();
+	
 	using namespace ip;
 	
 	// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
