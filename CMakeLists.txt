@@ -10,7 +10,7 @@ endif()
 find_package(Boost COMPONENTS system date_time regex filesystem REQUIRED)
 find_package(Threads REQUIRED)
 
-file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc)
+file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc BrightFuture/executor/BoostAsioExecutor.cc)
 
 include_directories(
     ${Boost_INCLUDE_DIR}

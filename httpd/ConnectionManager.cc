@@ -19,6 +19,8 @@
 #include "RequestParser.hh"
 #include "Response.hh"
 
+#include "executor/BoostAsioExecutor.hh"
+
 #include <cassert>
 
 namespace http {
@@ -130,10 +132,6 @@ void ConnectionManager::Entry::Stop()
 	m_socket.close();
 }
 
-ConnectionManager::ConnectionManager(BrightFuture::Executor *exec) : m_exec{exec}
-{
-}
-
 void ConnectionManager::Start(
 	boost::asio::ip::tcp::socket&&  sock,
 	const RequestDispatcher&        handler
@@ -142,7 +140,7 @@ void ConnectionManager::Start(
 	auto p = std::make_shared<ConnectionManager::Entry>(std::move(sock), handler, *this);
 
 	m_conn.insert(p);
-	p->Read(m_exec);
+	p->Read(&use_service<BrightFuture::BoostAsioExecutor>(sock.get_io_service()));
 }
 
 void ConnectionManager::Stop(const EntryPtr& p)

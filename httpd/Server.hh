@@ -16,8 +16,6 @@
 #include "RequestHandler.hh"
 #include "RequestDispatcher.hh"
 
-#include "executor/BoostAsioExecutor.hh"
-
 #include <boost/asio.hpp>
 #include <string>
 
@@ -92,9 +90,7 @@ private:
 	/// The next socket to be accepted.
 	boost::asio::ip::tcp::socket m_socket;
 
-	BrightFuture::BoostAsioExecutor m_exec;
-	
-	ConnectionManager       m_conn{&m_exec};
+	ConnectionManager       m_conn;
 
 	RequestDispatcher       m_handlers;
 };

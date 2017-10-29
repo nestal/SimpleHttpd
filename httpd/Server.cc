@@ -33,13 +33,10 @@ using namespace boost::asio;
 Server::Server(io_service& ios, const std::string& address, const std::string& port) :
 	m_signals{ios},
 	m_acceptor{ios},
-	m_socket{ios},
-	m_exec{ios}
+	m_socket{ios}
 {
 	DoAwaitStop();
 
-//	use_service<BrightFuture::BoostAsioExecutorService>(ios).Get();
-	
 	using namespace ip;
 	
 	// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).

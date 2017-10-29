@@ -28,7 +28,7 @@ private:
 	class Entry;
 	
 public:
-	ConnectionManager(BrightFuture::Executor *exec);
+	ConnectionManager() = default;
 
 	void Start(
 		boost::asio::ip::tcp::socket&&  sock,
@@ -43,7 +43,6 @@ private:
 
 private:
 	std::unordered_set<EntryPtr> m_conn;
-	BrightFuture::Executor       *m_exec;
 };
 
 } // end of namespace
