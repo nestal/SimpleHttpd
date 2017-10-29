@@ -28,17 +28,17 @@ using namespace boost::asio;
 class ConnectionManager::Entry : public Connection, public std::enable_shared_from_this<Entry>
 {
 public:
-	static std::shared_ptr<Entry> Make(
+	Entry(
 		boost::asio::ip::tcp::socket&&  sock,
 		const RequestDispatcher&        handler,
 		ConnectionManager&              parent
 	);
 	
-	void Start(BrightFuture::Executor *exec);
+	void Read(BrightFuture::Executor *exec);
 	void Stop();
 	
 	const http::Request&  Request() override {return m_req;}
-	void Reply(Response&& rep);
+	void Reply(const Response& rep);
 	io_service& IoService() override
 	{
 		return m_socket.get_io_service();
@@ -55,20 +55,12 @@ public:
 	}
 
 private:
-	Entry(
-		boost::asio::ip::tcp::socket&&  sock,
-		const RequestDispatcher&        handler,
-		ConnectionManager&              parent
-	);
-	
-private:
 	boost::asio::ip::tcp::socket m_socket;
 	std::array<char, 1024> m_read_buffer;
 	
 	ConnectionManager&  m_parent;
 	
 	http::Request       m_req;
-	http::Response      m_rep;
 	RequestParser       m_parser;
 	const RequestDispatcher& m_handler;
 };
@@ -84,7 +76,7 @@ ConnectionManager::Entry::Entry(
 {
 }
 
-void ConnectionManager::Entry::Start(BrightFuture::Executor *exec)
+void ConnectionManager::Entry::Read(BrightFuture::Executor *exec)
 {
 	assert(exec);
 	
@@ -107,7 +99,7 @@ void ConnectionManager::Entry::Start(BrightFuture::Executor *exec)
 					Reply({ResponseStatus::bad_request});
 
 				else
-					Start(exec);
+					Read(exec);
 			}
 
 			else if (error != boost::asio::error::operation_aborted)
@@ -116,11 +108,10 @@ void ConnectionManager::Entry::Start(BrightFuture::Executor *exec)
 }
 
 
-void ConnectionManager::Entry::Reply(Response&& rep)
+void ConnectionManager::Entry::Reply(const Response& rep)
 {
-	auto self = shared_from_this();
 	async_write(m_socket, rep.ToBuffers(),
-		[this, self](boost::system::error_code ec, std::size_t c)
+		[this, self=shared_from_this()](boost::system::error_code ec, std::size_t c)
 		{
 			if (!ec)
 			{
@@ -139,18 +130,8 @@ void ConnectionManager::Entry::Stop()
 	m_socket.close();
 }
 
-ConnectionManager::EntryPtr ConnectionManager::Entry::Make(
-	ip::tcp::socket&&        sock,
-	const RequestDispatcher& handler,
-	ConnectionManager&       parent)
+ConnectionManager::ConnectionManager(BrightFuture::Executor *exec) : m_exec{exec}
 {
-	struct Wrapper : ConnectionManager::Entry
-	{
-		// using doesn't work
-		Wrapper(ip::tcp::socket&& sock, const RequestDispatcher& handler, ConnectionManager& p) :
-			Entry(std::move(sock), handler, p) {}
-	};
-	return std::make_shared<Wrapper>(std::move(sock), handler, parent);
 }
 
 void ConnectionManager::Start(
@@ -158,10 +139,10 @@ void ConnectionManager::Start(
 	const RequestDispatcher&        handler
 )
 {
-	auto p = ConnectionManager::Entry::Make(std::move(sock), handler, *this);
+	auto p = std::make_shared<ConnectionManager::Entry>(std::move(sock), handler, *this);
 
 	m_conn.insert(p);
-	p->Start(m_exec);
+	p->Read(m_exec);
 }
 
 void ConnectionManager::Stop(const EntryPtr& p)
@@ -175,13 +156,8 @@ void ConnectionManager::Stop(const EntryPtr& p)
 
 void ConnectionManager::StopAll()
 {
-	for (auto& c : m_conn)
+	for (auto&& c : m_conn)
 		c->Stop();
-}
-
-ConnectionManager::ConnectionManager(BrightFuture::Executor *exec) : m_exec{exec}
-{
-
 }
 
 } // end of namespace

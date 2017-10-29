@@ -102,11 +102,8 @@ const char crlf[] = { '\r', '\n' };
 
 } // namespace misc_strings
 
-std::vector<const_buffer> Response::ToBuffers()
+std::vector<const_buffer> Response::ToBuffers() const
 {
-	// construct Content-Length header with the actual length of content
-	m_content_length = "Content-Length: " + std::to_string(m_content.size()) + "\r\n";
-	
 	return std::vector<const_buffer>{
 		status_strings::ToBuffer(m_status),
 		buffer(m_content_type),
@@ -261,11 +258,17 @@ void Response::AddHeader(const std::string& header, const std::string& value)
 void Response::SetContent(std::vector<char>&& buf)
 {
 	m_content = std::move(buf);
+	
+	// construct Content-Length header with the actual length of content
+	m_content_length = "Content-Length: " + std::to_string(m_content.size()) + "\r\n";
 }
 
 void Response::SetContent(const boost::asio::streambuf& buf)
 {
-	buffer_copy(boost::asio::buffer(m_content), buf.data());
+	std::vector<char> content;
+	buffer_copy(boost::asio::buffer(content), buf.data());
+	
+	SetContent(std::move(content));
 }
 
 Response::Response(ResponseStatus s) : m_status{s}

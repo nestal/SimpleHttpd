@@ -67,7 +67,7 @@ public:
 	/// Convert the reply into a vector of buffers. The buffers do not own the
 	/// underlying memory blocks, therefore the reply object must remain valid and
 	/// not be changed until the write operation has completed.
-	std::vector<boost::asio::const_buffer> ToBuffers();
+	std::vector<boost::asio::const_buffer> ToBuffers() const;
 
 private:
 	ResponseStatus m_status{ResponseStatus::ok};
