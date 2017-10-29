@@ -12,9 +12,10 @@
 
 #pragma once
 
+#include "BrightFuture.hh"
 #include <boost/asio.hpp>
 
-#include <set>
+#include <unordered_set>
 #include <memory>
 
 namespace http {
@@ -27,7 +28,7 @@ private:
 	class Entry;
 	
 public:
-	ConnectionManager() = default;
+	ConnectionManager(BrightFuture::Executor *exec);
 
 	void Start(
 		boost::asio::ip::tcp::socket&&  sock,
@@ -41,7 +42,8 @@ private:
 	void Stop(const EntryPtr& p);
 
 private:
-	std::set<EntryPtr> m_conn;
+	std::unordered_set<EntryPtr> m_conn;
+	BrightFuture::Executor       *m_exec;
 };
 
 } // end of namespace

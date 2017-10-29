@@ -33,7 +33,8 @@ using namespace boost::asio;
 Server::Server(io_service& ios, const std::string& address, const std::string& port) :
 	m_signals{ios},
 	m_acceptor{ios},
-	m_socket{ios}
+	m_socket{ios},
+	m_exec{ios}
 {
 	DoAwaitStop();
 

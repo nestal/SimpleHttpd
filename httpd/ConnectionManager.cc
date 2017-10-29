@@ -34,7 +34,7 @@ public:
 		ConnectionManager&              parent
 	);
 	
-	void Start();
+	void Start(BrightFuture::Executor *exec);
 	void Stop();
 	
 	const http::Request&  Request() override {return m_req;}
@@ -84,11 +84,12 @@ ConnectionManager::Entry::Entry(
 {
 }
 
-void ConnectionManager::Entry::Start()
+void ConnectionManager::Entry::Start(BrightFuture::Executor *exec)
 {
-	auto self(shared_from_this());
+	assert(exec);
+	
 	m_socket.async_read_some(buffer(m_read_buffer),
-		[this, self](boost::system::error_code error, std::size_t count)
+		[this, exec, self=shared_from_this()](boost::system::error_code error, std::size_t count)
 		{
 			if (!error)
 			{
@@ -97,19 +98,16 @@ void ConnectionManager::Entry::Start()
 					m_req, m_read_buffer.begin(), m_read_buffer.begin() + count);
 				
 				if (result == RequestParser::good)
-					m_handler.HandleRequest(self).then([this, self=shared_from_this()](auto fut_rep)
+					m_handler.HandleRequest(self).then([this, self](auto fut_reply)
 					{
-						Reply(fut_rep.get());
-					});
+						Reply(fut_reply.get());
+					}, exec);
 				
 				else if (result == RequestParser::bad)
-				{
-					Response rep;
-					rep.SetStatus(ResponseStatus::bad_request);
-					Reply(std::move(rep));
-				}
+					Reply({ResponseStatus::bad_request});
+
 				else
-					Start();
+					Start(exec);
 			}
 
 			else if (error != boost::asio::error::operation_aborted)
@@ -157,13 +155,13 @@ ConnectionManager::EntryPtr ConnectionManager::Entry::Make(
 
 void ConnectionManager::Start(
 	boost::asio::ip::tcp::socket&&  sock,
-	const RequestDispatcher&          handler
+	const RequestDispatcher&        handler
 )
 {
 	auto p = ConnectionManager::Entry::Make(std::move(sock), handler, *this);
 
 	m_conn.insert(p);
-	p->Start();
+	p->Start(m_exec);
 }
 
 void ConnectionManager::Stop(const EntryPtr& p)
@@ -179,6 +177,11 @@ void ConnectionManager::StopAll()
 {
 	for (auto& c : m_conn)
 		c->Stop();
+}
+
+ConnectionManager::ConnectionManager(BrightFuture::Executor *exec) : m_exec{exec}
+{
+
 }
 
 } // end of namespace
