@@ -265,7 +265,7 @@ void Response::SetContent(std::vector<char>&& buf)
 
 void Response::SetContent(const boost::asio::streambuf& buf)
 {
-	std::vector<char> content;
+	std::vector<char> content(buf.size());
 	buffer_copy(boost::asio::buffer(content), buf.data());
 	
 	SetContent(std::move(content));
