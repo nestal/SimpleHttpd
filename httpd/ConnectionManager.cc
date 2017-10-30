@@ -36,7 +36,7 @@ public:
 		ConnectionManager&              parent
 	);
 	
-	void Read(BrightFuture::Executor *exec);
+	void Read(BrightFuture::Executor& exec);
 	void Stop();
 	
 	const http::Request&  Request() override {return m_req;}
@@ -78,12 +78,10 @@ ConnectionManager::Entry::Entry(
 {
 }
 
-void ConnectionManager::Entry::Read(BrightFuture::Executor *exec)
+void ConnectionManager::Entry::Read(BrightFuture::Executor& exec)
 {
-	assert(exec);
-	
 	m_socket.async_read_some(buffer(m_read_buffer),
-		[this, exec, self=shared_from_this()](boost::system::error_code error, std::size_t count)
+		[this, &exec, self=shared_from_this()](boost::system::error_code error, std::size_t count)
 		{
 			if (!error)
 			{
@@ -140,7 +138,7 @@ void ConnectionManager::Start(
 	auto p = std::make_shared<ConnectionManager::Entry>(std::move(sock), handler, *this);
 
 	m_conn.insert(p);
-	p->Read(&use_service<BrightFuture::BoostAsioExecutor>(sock.get_io_service()));
+	p->Read(use_service<BrightFuture::BoostAsioExecutor>(sock.get_io_service()));
 }
 
 void ConnectionManager::Stop(const EntryPtr& p)
