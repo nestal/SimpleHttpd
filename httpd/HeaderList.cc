@@ -63,4 +63,9 @@ std::size_t HeaderList::ContentLength() const
 	return m_content_length.get();
 }
 
+std::size_t HeaderList::Count() const
+{
+	return m_.size();
+}
+
 } // end of namespace

@@ -20,14 +20,28 @@ HttpParser::HttpParser()
 	{
 		auto pthis = reinterpret_cast<HttpParser*>(p->data);
 		pthis->m_output.SetMethod(http_method_str(static_cast<http_method >(p->method)));
-//		pthis->m_output.SetMajorVersion(p->http_major);
-//		pthis->m_output.SetMinorVersion(p->http_minor);
 		return 0;
 	};
 	m_setting.on_url = [](http_parser* p, const char *data, size_t size)
 	{
 		auto pthis = reinterpret_cast<HttpParser*>(p->data);
 		pthis->m_url.append(data, size);
+		return 0;
+	};
+	m_setting.on_header_field = [](http_parser* p, const char *data, size_t size)
+	{
+		auto pthis = reinterpret_cast<HttpParser*>(p->data);
+		return pthis->OnHeaderField(data, size);
+	};
+	m_setting.on_header_value = [](http_parser* p, const char *data, size_t size)
+	{
+		auto pthis = reinterpret_cast<HttpParser*>(p->data);
+		return pthis->OnHeaderValue(data, size);
+	};
+	m_setting.on_headers_complete = [](http_parser* p)
+	{
+		auto pthis = reinterpret_cast<HttpParser*>(p->data);
+		pthis->AddHeader();
 		return 0;
 	};
 	
@@ -43,6 +57,41 @@ std::size_t HttpParser::Parse(const char *data, std::size_t size)
 const Request& HttpParser::Result() const
 {
 	return m_output;
+}
+
+int HttpParser::OnHeaderField(const char *data, std::size_t size)
+{
+	switch (m_header_state)
+	{
+	case HeaderState::none:
+		m_output.SetMajorVersion(m_parser.http_major);
+		m_output.SetMinorVersion(m_parser.http_minor);
+		break;
+	
+	case HeaderState::value:
+		AddHeader();
+		break;
+		
+	default:
+		break;
+	}
+	m_header_field.append(data, size);
+	m_header_state = HeaderState::field;
+	return 0;
+}
+
+int HttpParser::OnHeaderValue(const char *data, std::size_t size)
+{
+	m_header_value.append(data, size);
+	m_header_state = HeaderState::value;
+	return 0;
+}
+
+void HttpParser::AddHeader()
+{
+	m_output.AddHeader({m_header_field, m_header_value});
+	m_header_field.clear();
+	m_header_value.clear();
 }
 
 } // end of namespace

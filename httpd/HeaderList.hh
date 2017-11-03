@@ -46,6 +46,7 @@ public:
 	// generic field access
 	void Add(Header&& hdr);
 	bool Empty() const;
+	std::size_t Count() const;
 
 	iterator begin() const;
 	iterator end() const;

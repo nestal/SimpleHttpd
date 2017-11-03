@@ -27,8 +27,17 @@ public:
 	const Request& Result() const;
 	
 private:
+	int OnHeaderField(const char *data, std::size_t size);
+	int OnHeaderValue(const char *data, std::size_t size);
+	void AddHeader();
+	
+private:
 	// transient data
 	std::string m_url;
+	std::string m_header_field;
+	std::string m_header_value;
+	enum class HeaderState {field, value, none};
+	HeaderState m_header_state{HeaderState::none};
 	
 	Request     m_output;
 	

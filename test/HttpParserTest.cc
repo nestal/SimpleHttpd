@@ -30,7 +30,10 @@ TEST_CASE("HttpParser simple test", "[normal]")
 	auto r = subject.Parse(request, sizeof(request)-1);
 	CHECK(r == sizeof(request)-1);
 	
-	CHECK(subject.Result().Method() == "GET");
+	auto&& result = subject.Result();
+	CHECK(result.Method() == "GET");
+	CHECK(result.Headers().Count() == 3);
+	CHECK(result.Headers().Field("Host") == "localhost:8080");
 }
 
 TEST_CASE("parser test", "[normal]")
