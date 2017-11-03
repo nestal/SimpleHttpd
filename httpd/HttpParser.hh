@@ -25,6 +25,7 @@ public:
 	std::size_t Parse(const char *data, std::size_t size);
 	
 	const Request& Result() const;
+	http_errno Errno() const;
 	
 private:
 	int OnHeaderField(const char *data, std::size_t size);

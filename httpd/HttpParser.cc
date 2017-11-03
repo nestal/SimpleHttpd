@@ -107,4 +107,9 @@ void HttpParser::AddHeader()
 	m_header_value.clear();
 }
 
+http_errno HttpParser::Errno() const
+{
+	return static_cast<http_errno>(m_parser.http_errno);
+}
+
 } // end of namespace
