@@ -12,16 +12,6 @@
 
 #include "HttpParser.hh"
 
-namespace {
-static const char *method_strings[] =
-{
-#define XX(num, name, string) #string,
-  HTTP_METHOD_MAP(XX)
-#undef XX
-};
-
-}
-
 namespace http {
 
 HttpParser::HttpParser()
@@ -29,7 +19,7 @@ HttpParser::HttpParser()
 	m_setting.on_message_begin = [](http_parser *p)
 	{
 		auto pthis = reinterpret_cast<HttpParser*>(p->data);
-		pthis->m_output.SetMethod(method_strings[p->method]);
+		pthis->m_output.SetMethod(http_method_str(static_cast<http_method >(p->method)));
 //		pthis->m_output.SetMajorVersion(p->http_major);
 //		pthis->m_output.SetMinorVersion(p->http_minor);
 		return 0;
