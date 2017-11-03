@@ -21,6 +21,10 @@ class HttpParser
 {
 public:
 	HttpParser();
+	HttpParser(HttpParser&&) = delete;
+	HttpParser(const HttpParser&) = delete;
+	HttpParser& operator=(HttpParser&&) = delete;
+	HttpParser& operator=(const HttpParser&) = delete;
 	
 	std::size_t Parse(const char *data, std::size_t size);
 	

@@ -25,6 +25,7 @@ namespace http {
 
 class Request;
 class Response;
+class HeaderList;
 
 /**
  * \brief Represents the information required to handle an HTTP request
@@ -96,5 +97,27 @@ using ConnectionPtr = std::shared_ptr<Connection>;
  */
 using RequestHandler = std::function<BrightFuture::future<Response>(const ConnectionPtr&)>;
 
+class ContentSink
+{
+public:
+	virtual ~ContentSink() = default;
+	virtual void SinkContent(const char *data, std::size_t size) = 0;
+	virtual void Finish() = 0;
+};
+
+class CustomRequestHandler
+{
+public:
+	virtual ~CustomRequestHandler() = default;
+	
+	virtual std::vector<std::string> Start(std::string&& method, std::string&& url, int major, int minor) = 0 ;
+	virtual ContentSink* HeaderReceived(HeaderList&& headers) = 0;
+	virtual BrightFuture::future<Response> Finish() = 0;
+};
+
+// instead of returning the whole request, the Connection should return 3 things:
+// 1. method/url/major/minor: i.e. first line in request
+// 2. future<HeaderList>: the header is not read yet, so it's a future
+// 3. future<Content>: the content is not read yet, so it's a future
 
 } // end of namespace
