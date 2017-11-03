@@ -10,8 +10,6 @@ endif()
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 find_package(Threads REQUIRED)
 
-file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc BrightFuture/executor/BoostAsioExecutor.cc)
-
 include_directories(
     ${Boost_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/BrightFuture
@@ -19,10 +17,10 @@ include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc BrightFuture/executor/BoostAsioExecutor.cc)
 add_library(httpdlib
     ${HTTP_LIB_FILES}
     )
-
 target_link_libraries(httpdlib
     Threads::Threads
 	Boost::disable_autolinking
@@ -31,12 +29,14 @@ target_link_libraries(httpdlib
     ${Boost_LIBRARIES}
 )
 
+add_library(http_parser http-parser/http_parser.c http-parser/http_parser.h)
+
 set(SOURCE_FILES main.cc)
 add_executable(SimpleHttp ${SOURCE_FILES})
 target_link_libraries(SimpleHttp httpdlib)
 
 file(GLOB HTTP_UT_FILES	test/*.cc)
 add_executable(httpd_test ${HTTP_UT_FILES})
-target_link_libraries(httpd_test httpdlib)
+target_link_libraries(httpd_test httpdlib http_parser)
 
 add_subdirectory(BrightFuture)

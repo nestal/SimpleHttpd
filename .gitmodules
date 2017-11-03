@@ -1,3 +1,6 @@
 [submodule "BrightFuture"]
 	path = BrightFuture
 	url = https://github.com/nestal/BrightFuture.git
+[submodule "http-parser"]
+	path = http-parser
+	url = https://github.com/nodejs/http-parser.git
