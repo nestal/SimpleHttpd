@@ -16,7 +16,7 @@
 #include "RequestDispatcher.hh"
 
 #include "Request.hh"
-#include "RequestParser.hh"
+#include "HttpParser.hh"
 #include "Response.hh"
 
 #include "executor/BoostAsioExecutor.hh"
@@ -61,9 +61,8 @@ private:
 	std::array<char, 1024> m_read_buffer;
 	
 	ConnectionManager&  m_parent;
-	
 	http::Request       m_req;
-	RequestParser       m_parser;
+	HttpParser          m_parser;
 	const RequestDispatcher& m_handler;
 };
 
@@ -85,19 +84,22 @@ void ConnectionManager::Entry::Read(BrightFuture::Executor& exec)
 		{
 			if (!error)
 			{
-				RequestParser::Result result;
-				std::tie(result, std::ignore) = m_parser.Parse(
-					m_req, m_read_buffer.begin(), m_read_buffer.begin() + count);
-				
-				if (result == RequestParser::good)
-					m_handler.HandleRequest(self).then([this, self](auto fut_reply)
+				m_parser.Parse(m_read_buffer.begin(), count);
+				if (m_parser.Complete())
+				{
+					if (m_parser.Errno() == HPE_OK)
 					{
-						Reply(fut_reply.get());
-					}, exec);
-				
-				else if (result == RequestParser::bad)
+						m_req = std::move(m_parser.Result());
+						m_handler.HandleRequest(self).then(
+							[this, self](auto fut_reply)
+							{
+								Reply(fut_reply.get());
+							}, exec
+						);
+					}
+					else
 					Reply({ResponseStatus::bad_request});
-
+				}
 				else
 					Read(exec);
 			}

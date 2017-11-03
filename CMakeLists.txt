@@ -20,7 +20,8 @@ include_directories(
 file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc BrightFuture/executor/BoostAsioExecutor.cc)
 add_library(httpdlib
     ${HTTP_LIB_FILES}
-    )
+	http-parser/http_parser.c http-parser/http_parser.h
+)
 target_link_libraries(httpdlib
     Threads::Threads
 	Boost::disable_autolinking
@@ -29,14 +30,12 @@ target_link_libraries(httpdlib
     ${Boost_LIBRARIES}
 )
 
-add_library(http_parser http-parser/http_parser.c http-parser/http_parser.h)
-
 set(SOURCE_FILES main.cc)
 add_executable(SimpleHttp ${SOURCE_FILES})
 target_link_libraries(SimpleHttp httpdlib)
 
 file(GLOB HTTP_UT_FILES	test/*.cc)
 add_executable(httpd_test ${HTTP_UT_FILES})
-target_link_libraries(httpd_test httpdlib http_parser)
+target_link_libraries(httpd_test httpdlib)
 
 add_subdirectory(BrightFuture)

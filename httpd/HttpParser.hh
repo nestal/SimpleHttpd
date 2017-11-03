@@ -24,8 +24,11 @@ public:
 	
 	std::size_t Parse(const char *data, std::size_t size);
 	
+	Request&& Result();
 	const Request& Result() const;
+	
 	http_errno Errno() const;
+	bool Complete() const;
 	
 private:
 	int OnHeaderField(const char *data, std::size_t size);
@@ -43,6 +46,7 @@ private:
 	HeaderState m_header_state{HeaderState::none};
 	
 	Request     m_output;
+	bool        m_complete{false};
 	
 	::http_parser_settings  m_setting{};
 	::http_parser           m_parser{};

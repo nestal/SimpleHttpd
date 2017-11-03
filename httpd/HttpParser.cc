@@ -54,6 +54,7 @@ HttpParser::HttpParser()
 	{
 		auto pthis = reinterpret_cast<HttpParser *>(p->data);
 		pthis->m_output.SetContent(std::move(pthis->m_content));
+		pthis->m_complete = true;
 		return 0;
 	};
 	
@@ -64,6 +65,11 @@ HttpParser::HttpParser()
 std::size_t HttpParser::Parse(const char *data, std::size_t size)
 {
 	return ::http_parser_execute(&m_parser, &m_setting, data, size);
+}
+
+Request&& HttpParser::Result()
+{
+	return std::move(m_output);
 }
 
 const Request& HttpParser::Result() const
@@ -110,6 +116,11 @@ void HttpParser::AddHeader()
 http_errno HttpParser::Errno() const
 {
 	return static_cast<http_errno>(m_parser.http_errno);
+}
+
+bool HttpParser::Complete() const
+{
+	return m_complete;
 }
 
 } // end of namespace
