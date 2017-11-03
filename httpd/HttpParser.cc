@@ -44,6 +44,18 @@ HttpParser::HttpParser()
 		pthis->AddHeader();
 		return 0;
 	};
+	m_setting.on_body = [](http_parser* p, const char *data, size_t size)
+	{
+		auto pthis = reinterpret_cast<HttpParser *>(p->data);
+		pthis->m_content.append(data, size);
+		return 0;
+	};
+	m_setting.on_message_complete = [](http_parser *p)
+	{
+		auto pthis = reinterpret_cast<HttpParser *>(p->data);
+		pthis->m_output.SetContent(std::move(pthis->m_content));
+		return 0;
+	};
 	
 	m_parser.data = this;
 	::http_parser_init(&m_parser, HTTP_REQUEST);

@@ -36,6 +36,8 @@ private:
 	std::string m_url;
 	std::string m_header_field;
 	std::string m_header_value;
+	std::string m_content;
+	
 	enum class HeaderState {field, value, none};
 	HeaderState m_header_state{HeaderState::none};
 	
