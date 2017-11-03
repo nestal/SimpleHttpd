@@ -31,6 +31,7 @@ TEST_CASE("HttpParser simple test", "[normal]")
 	CHECK(r == sizeof(request)-1);
 	
 	auto&& result = subject.Result();
+	CHECK(result.Uri() == "/some/path/to/url");
 	CHECK(result.Method() == "GET");
 	CHECK(result.Headers().Count() == 3);
 	CHECK(result.Headers().Field("Host") == "localhost:8080");

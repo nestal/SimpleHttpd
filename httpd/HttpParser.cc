@@ -66,6 +66,7 @@ int HttpParser::OnHeaderField(const char *data, std::size_t size)
 	case HeaderState::none:
 		m_output.SetMajorVersion(m_parser.http_major);
 		m_output.SetMinorVersion(m_parser.http_minor);
+		m_output.SetUri(m_url);
 		break;
 	
 	case HeaderState::value:
