@@ -33,7 +33,8 @@ TEST_CASE("HttpParser GET simple request", "[normal]")
 	{
 		auto r = subject.Parse(request, size);
 		CHECK(r == size);
-		CHECK(subject.Errno() == HPE_OK);
+		CHECK(subject.CurrentProgress() == HttpParser::Progress::finished);
+		CHECK(subject.Result() == HPE_OK);
 		
 		CHECK(result.Uri() == "/some/path/to/url");
 		CHECK(result.Method() == "GET");
@@ -50,7 +51,7 @@ TEST_CASE("HttpParser GET simple request", "[normal]")
 		
 		auto r2 = subject.Parse(request+r, size-r);
 		CHECK(r2 == size-r);
-		CHECK(subject.Errno() == HPE_OK);
+		CHECK(subject.Result() == HPE_OK);
 		
 		CHECK(result.Method() == "GET");
 		CHECK(result.Headers().Count() == 3);
@@ -75,7 +76,8 @@ TEST_CASE("HttpParser POST request content", "[normal]")
 	HttpParser subject{result};
 	auto r = subject.Parse(request, size);
 	CHECK(r == size);
-	CHECK(subject.Errno() == HPE_OK);
+	CHECK(subject.CurrentProgress() == HttpParser::Progress::finished);
+	CHECK(subject.Result() == HPE_OK);
 	
 	CHECK(result.Method() == "POST");
 	CHECK(result.Content() == "hello=world!");

@@ -19,7 +19,6 @@ HttpParser::HttpParser(RequestCallback& output) : m_output{output}
 	m_setting.on_message_begin = [](http_parser *p)
 	{
 		auto pthis = reinterpret_cast<HttpParser*>(p->data);
-//		pthis->m_output.SetMethod(http_method_str(static_cast<http_method >(p->method)));
 		return 0;
 	};
 	m_setting.on_url = [](http_parser* p, const char *data, size_t size)
@@ -47,13 +46,14 @@ HttpParser::HttpParser(RequestCallback& output) : m_output{output}
 	m_setting.on_body = [](http_parser* p, const char *data, size_t size)
 	{
 		auto pthis = reinterpret_cast<HttpParser *>(p->data);
+		pthis->m_progress = Progress::content;
 		pthis->m_output.OnContent(data, size);
 		return 0;
 	};
 	m_setting.on_message_complete = [](http_parser *p)
 	{
 		auto pthis = reinterpret_cast<HttpParser *>(p->data);
-		pthis->m_complete = true;
+		pthis->m_progress = Progress::finished;
 		return 0;
 	};
 	
@@ -71,6 +71,7 @@ int HttpParser::OnHeaderField(const char *data, std::size_t size)
 	switch (m_header_state)
 	{
 	case HeaderState::none:
+		m_progress = Progress::header;
 		m_output.OnMessageStart(
 			http_method_str(static_cast<http_method >(m_parser.method)),
 			std::move(m_url),
@@ -105,14 +106,19 @@ void HttpParser::AddHeader()
 	m_header_value.clear();
 }
 
-http_errno HttpParser::Errno() const
+http_errno HttpParser::Result() const
 {
 	return static_cast<http_errno>(m_parser.http_errno);
 }
 
-bool HttpParser::Complete() const
+HttpParser::Progress HttpParser::CurrentProgress() const
 {
-	return m_complete;
+	return m_progress;
+}
+
+std::ostream& operator<<(std::ostream& os, HttpParser::Progress p)
+{
+	return os << "HttpParser::Progress(" << static_cast<int>(p) << ")";
 }
 
 } // end of namespace

@@ -86,9 +86,9 @@ void ConnectionManager::Entry::Read()
 			if (!error)
 			{
 				m_parser.Parse(m_read_buffer.begin(), count);
-				if (m_parser.Complete())
+				if (m_parser.CurrentProgress() == HttpParser::Progress::finished)
 				{
-					if (m_parser.Errno() == HPE_OK)
+					if (m_parser.Result() == HPE_OK)
 					{
 						m_handler.HandleRequest(self).then([this, self](auto fut_reply)
 						{

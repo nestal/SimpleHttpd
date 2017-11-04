@@ -31,11 +31,19 @@ public:
 	UriString& operator=(const UriString&) = default;
 	UriString& operator=(UriString&&) = default;
 	
-	template <typename T>
-	UriString(T&& uri) : m_uri{std::forward<T>(uri)}
+	UriString(std::string&& uri) : m_uri{std::move(uri)}
+	{
+	}
+	
+	UriString(const std::string& uri) : m_uri{uri}
 	{
 	}
 
+	template <std::size_t n>
+	UriString(const char (&str)[n]) : m_uri{str, n}
+	{
+	}
+	
 	std::string operator[](std::size_t idx) const;
 
 	const std::string& Str() const;

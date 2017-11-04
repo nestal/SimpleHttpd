@@ -15,10 +15,15 @@
 #include "Request.hh"
 #include "http-parser/http_parser.h"
 
+#include <iosfwd>
+
 namespace http {
 
 class HttpParser
 {
+public:
+	enum class Progress {start, header, content, finished};
+	
 public:
 	explicit HttpParser(RequestCallback& output);
 	HttpParser(HttpParser&&) = delete;
@@ -28,8 +33,8 @@ public:
 	
 	std::size_t Parse(const char *data, std::size_t size);
 	
-	http_errno Errno() const;
-	bool Complete() const;
+	http_errno Result() const;
+	Progress CurrentProgress() const;
 	
 private:
 	int OnHeaderField(const char *data, std::size_t size);
@@ -46,10 +51,12 @@ private:
 	HeaderState m_header_state{HeaderState::none};
 	
 	RequestCallback&    m_output;
-	bool                m_complete{false};
+	Progress            m_progress{Progress::start};
 	
 	::http_parser_settings  m_setting{};
 	::http_parser           m_parser{};
 };
+
+std::ostream& operator<<(std::ostream& os, HttpParser::Progress p);
 
 } // end of namespace

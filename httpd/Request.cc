@@ -48,7 +48,7 @@ const std::string& Request::Content() const
 void Request::OnMessageStart(std::string&& method, std::string&& url, int major, int minor)
 {
 	m_method = std::move(method);
-	m_uri = std::move(url);
+	m_uri.Str(std::move(url));
 	m_major = major;
 	m_minor = minor;
 }
