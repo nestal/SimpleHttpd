@@ -40,7 +40,7 @@ Server::Server(io_service& ios, const std::string& address, const std::string& p
 	using namespace ip;
 	
 	// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-	tcp::resolver resolver(ios);
+	tcp::resolver resolver{ios};
 	tcp::endpoint endpoint = *resolver.resolve({address, port});
 	m_acceptor.open(endpoint.protocol());
 	m_acceptor.set_option(tcp::acceptor::reuse_address(true));
@@ -52,20 +52,19 @@ Server::Server(io_service& ios, const std::string& address, const std::string& p
 
 void Server::AsyncAccept()
 {
-	m_acceptor.async_accept(m_socket,
-		[this](boost::system::error_code ec)
+	m_acceptor.async_accept(m_socket, [this](boost::system::error_code ec)
+	{
+		// Check whether the server was stopped by a signal before this
+		// completion handler had a chance to run.
+		if (m_acceptor.is_open())
 		{
-			// Check whether the server was stopped by a signal before this
-			// completion handler had a chance to run.
-			if (m_acceptor.is_open())
-			{
-				if (!ec)
-					m_conn.Start(std::move(m_socket), m_handlers);
-				
-				// wait for another connection to come
-				AsyncAccept();
-			}
-		});
+			if (!ec)
+				m_conn.Start(std::move(m_socket), m_handlers);
+			
+			// wait for another connection to come
+			AsyncAccept();
+		}
+	});
 }
 
 void Server::DoAwaitStop()
