@@ -14,12 +14,12 @@
 
 namespace http {
 
-HttpParser::HttpParser()
+HttpParser::HttpParser(RequestCallback& output) : m_output{output}
 {
 	m_setting.on_message_begin = [](http_parser *p)
 	{
 		auto pthis = reinterpret_cast<HttpParser*>(p->data);
-		pthis->m_output.SetMethod(http_method_str(static_cast<http_method >(p->method)));
+//		pthis->m_output.SetMethod(http_method_str(static_cast<http_method >(p->method)));
 		return 0;
 	};
 	m_setting.on_url = [](http_parser* p, const char *data, size_t size)
@@ -47,13 +47,12 @@ HttpParser::HttpParser()
 	m_setting.on_body = [](http_parser* p, const char *data, size_t size)
 	{
 		auto pthis = reinterpret_cast<HttpParser *>(p->data);
-		pthis->m_content.append(data, size);
+		pthis->m_output.OnContent(data, size);
 		return 0;
 	};
 	m_setting.on_message_complete = [](http_parser *p)
 	{
 		auto pthis = reinterpret_cast<HttpParser *>(p->data);
-		pthis->m_output.SetContent(std::move(pthis->m_content));
 		pthis->m_complete = true;
 		return 0;
 	};
@@ -67,24 +66,17 @@ std::size_t HttpParser::Parse(const char *data, std::size_t size)
 	return ::http_parser_execute(&m_parser, &m_setting, data, size);
 }
 
-Request&& HttpParser::Result()
-{
-	return std::move(m_output);
-}
-
-const Request& HttpParser::Result() const
-{
-	return m_output;
-}
-
 int HttpParser::OnHeaderField(const char *data, std::size_t size)
 {
 	switch (m_header_state)
 	{
 	case HeaderState::none:
-		m_output.SetMajorVersion(m_parser.http_major);
-		m_output.SetMinorVersion(m_parser.http_minor);
-		m_output.SetUri(m_url);
+		m_output.OnMessageStart(
+			http_method_str(static_cast<http_method >(m_parser.method)),
+			std::move(m_url),
+			m_parser.http_major,
+			m_parser.http_minor
+		);
 		break;
 	
 	case HeaderState::value:
@@ -108,7 +100,7 @@ int HttpParser::OnHeaderValue(const char *data, std::size_t size)
 
 void HttpParser::AddHeader()
 {
-	m_output.AddHeader({m_header_field, m_header_value});
+	m_output.OnHeader(std::move(m_header_field), std::move(m_header_value));
 	m_header_field.clear();
 	m_header_value.clear();
 }

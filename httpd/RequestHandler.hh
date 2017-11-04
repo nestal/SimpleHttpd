@@ -112,12 +112,9 @@ public:
 	
 	virtual std::vector<std::string> Start(std::string&& method, std::string&& url, int major, int minor) = 0 ;
 	virtual ContentSink* HeaderReceived(HeaderList&& headers) = 0;
-	virtual BrightFuture::future<Response> Finish() = 0;
+	virtual BrightFuture::future<Response> Reply() = 0;
 };
 
-// instead of returning the whole request, the Connection should return 3 things:
-// 1. method/url/major/minor: i.e. first line in request
-// 2. future<HeaderList>: the header is not read yet, so it's a future
-// 3. future<Content>: the content is not read yet, so it's a future
+// BrightFuture::future<Response> Connection::RegisterCustomRequestHandler(std::unique_ptr<CustomRequestHandler> handler);
 
 } // end of namespace

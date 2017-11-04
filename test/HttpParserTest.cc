@@ -20,7 +20,8 @@ using namespace http;
 
 TEST_CASE("HttpParser GET simple request", "[normal]")
 {
-	HttpParser subject;
+	Request result;
+	HttpParser subject{result};
 	const char request[] = "GET /some/path/to/url HTTP/1.1\r\n"
 		"Host: localhost:8080\r\n"
 		"User-Agent: curl/7.53.1\r\n"
@@ -34,7 +35,6 @@ TEST_CASE("HttpParser GET simple request", "[normal]")
 		CHECK(r == size);
 		CHECK(subject.Errno() == HPE_OK);
 		
-		auto&& result = subject.Result();
 		CHECK(result.Uri() == "/some/path/to/url");
 		CHECK(result.Method() == "GET");
 		CHECK(result.Headers().Count() == 3);
@@ -52,7 +52,6 @@ TEST_CASE("HttpParser GET simple request", "[normal]")
 		CHECK(r2 == size-r);
 		CHECK(subject.Errno() == HPE_OK);
 		
-		auto&& result = subject.Result();
 		CHECK(result.Method() == "GET");
 		CHECK(result.Headers().Count() == 3);
 	}
@@ -71,13 +70,13 @@ TEST_CASE("HttpParser POST request content", "[normal]")
 		"hello=world!\r\n"
 	;
 	const auto size = sizeof(request)-1;
-	
-	HttpParser subject;
+
+	Request result;
+	HttpParser subject{result};
 	auto r = subject.Parse(request, size);
 	CHECK(r == size);
 	CHECK(subject.Errno() == HPE_OK);
 	
-	auto&& result = subject.Result();
 	CHECK(result.Method() == "POST");
 	CHECK(result.Content() == "hello=world!");
 }

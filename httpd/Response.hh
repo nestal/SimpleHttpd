@@ -69,6 +69,9 @@ public:
 	/// not be changed until the write operation has completed.
 	std::vector<boost::asio::const_buffer> ToBuffers() const;
 
+	// void Send(stream_socket& sock);
+	// virtual to allow different implementation of content?
+	
 private:
 	ResponseStatus m_status{ResponseStatus::ok};
 
@@ -81,6 +84,7 @@ private:
 	std::string m_other_headers;
 	
 	/// The content to be sent in the reply.
+	/// variant<vector, ifstream> ??
 	std::vector<char> m_content;
 };
 

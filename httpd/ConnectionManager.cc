@@ -62,7 +62,7 @@ private:
 	
 	ConnectionManager&  m_parent;
 	http::Request       m_req;
-	HttpParser          m_parser;
+	HttpParser          m_parser{m_req};
 	const RequestDispatcher& m_handler;
 };
 
@@ -89,13 +89,10 @@ void ConnectionManager::Entry::Read(BrightFuture::Executor& exec)
 				{
 					if (m_parser.Errno() == HPE_OK)
 					{
-						m_req = std::move(m_parser.Result());
-						m_handler.HandleRequest(self).then(
-							[this, self](auto fut_reply)
-							{
-								Reply(fut_reply.get());
-							}, exec
-						);
+						m_handler.HandleRequest(self).then([this, self](auto fut_reply)
+						{
+							Reply(fut_reply.get());
+						}, exec);
 					}
 					else
 					Reply({ResponseStatus::bad_request});

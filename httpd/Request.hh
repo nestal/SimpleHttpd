@@ -21,31 +21,38 @@
 
 namespace http {
 
+class RequestCallback
+{
+public:
+	virtual ~RequestCallback() = default;
+	
+	virtual void OnMessageStart(std::string&& method, std::string&& url, int major, int minor) = 0;
+	virtual void OnHeader(std::string&& field, std::string&& value) = 0;
+	virtual void OnContent(const char *data, std::size_t size) = 0;
+	virtual void OnMessageEnd() = 0;
+};
+
 /**
  * \brief   HTTP Request
  */
-class Request
+class Request : public RequestCallback
 {
 public:
 	Request() = default;
 
-	void SetMethod(const std::string& method);
+	void OnMessageStart(std::string&& method, std::string&& url, int major, int minor) override;
+	void OnHeader(std::string&& field, std::string&& value) override;
+	void OnContent(const char *data, std::size_t size) override;
+	void OnMessageEnd() override;
+	
 	const std::string& Method() const;
-
-	void SetMajorVersion(int version);
-	void SetMinorVersion(int version);
 	int MajorVersion() const;
 	int MinorVersion() const;
-
-	void SetUri(const std::string& uri);
 	const UriString& Uri() const;
 
-	void AddHeader(HeaderList::Header&& hdr);
 	const HeaderList& Headers() const;
-
 	const std::string& Content() const;
-	void SetContent(std::string&& content);
-
+	
 private:
 	std::string m_method;
 	UriString   m_uri;

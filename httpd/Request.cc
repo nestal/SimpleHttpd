@@ -15,26 +15,9 @@
 
 namespace http {
 
-using namespace boost::asio;
-
-void Request::SetMethod(const std::string& method)
-{
-	m_method = method;
-}
-
 const std::string& Request::Method() const
 {
 	return m_method;
-}
-
-void Request::SetMajorVersion(int version)
-{
-	m_major = version;
-}
-
-void Request::SetMinorVersion(int version)
-{
-	m_minor = version;
 }
 
 int Request::MajorVersion() const
@@ -47,19 +30,9 @@ int Request::MinorVersion() const
 	return m_minor;
 }
 
-void Request::SetUri(const std::string& uri)
-{
-	m_uri = uri;
-}
-
 const UriString& Request::Uri() const
 {
 	return m_uri;
-}
-
-void Request::AddHeader(HeaderList::Header&& hdr)
-{
-	m_headers.Add(std::move(hdr));
 }
 
 const HeaderList& Request::Headers() const
@@ -72,9 +45,27 @@ const std::string& Request::Content() const
 	return m_content;
 }
 
-void Request::SetContent(std::string&& content)
+void Request::OnMessageStart(std::string&& method, std::string&& url, int major, int minor)
 {
-	m_content = std::move(content);
+	m_method = std::move(method);
+	m_uri = std::move(url);
+	m_major = major;
+	m_minor = minor;
+}
+
+void Request::OnHeader(std::string&& field, std::string&& value)
+{
+	m_headers.Add({field, value});
+}
+
+void Request::OnContent(const char *data, std::size_t size)
+{
+	m_content.append(data, size);
+}
+
+void Request::OnMessageEnd()
+{
+
 }
 	
 } // end of namespace
