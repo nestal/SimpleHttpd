@@ -24,10 +24,6 @@ int main()
 		promise.set_value(std::move(rep));
 		return promise.get_future();
 	});
-	s.AddHandler("error501", [](auto&&)
-	{
-		return BrightFuture::future<http::Response>{};
-	});
 /*	s.AddHandler("upload", [](auto&& conn)
 	{
 		class SaveContent : public http::ContentHandler

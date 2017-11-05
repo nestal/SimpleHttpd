@@ -20,7 +20,7 @@
 
 namespace http {
 
-future<Response> RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
+ContentHandlerPtr RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
 {
 	assert(c);
 	

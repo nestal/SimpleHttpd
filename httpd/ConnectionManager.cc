@@ -51,54 +51,46 @@ public:
 	}
 	int OnHeaderComplete() override
 	{
-		m_response = m_handler.HandleRequest(shared_from_this());
-		
-		// Either we have a response from the request handler, or the request handler
-		// set a ContentHandler which we can get a response when it finishes
-		return m_response.valid() || m_content ? 0 : -1;
+		m_content_handler = m_handler.HandleRequest(shared_from_this());
+		return 0;
 	}
 	
 	int OnContent(const char *data, std::size_t size) override
 	{
-		assert(!m_response.valid());
-		if (m_content)
-			m_response = m_content->OnContent(data, size);
+		assert(m_content_handler);
+		auto response = m_content_handler->OnContent(data, size);
 		
-		// pre-mature response
-		return m_response.valid() ? -1 : 0;
+		// pre-mature response indicates an error from the content handler
+		if (response.valid())
+		{
+			TryReply(std::move(response));
+			return -1;
+		}
+		else
+		{
+			return 0;
+		}
 	}
 	int OnMessageEnd() override
 	{
-		if (m_content)
-		{
-			auto r = m_content->Finish();
-			if (!m_response.valid())
-				m_response = std::move(r);
-		}
-		
-		assert(m_response.valid());
+		assert(m_content_handler);
+		auto response = m_content_handler->Finish();
+		assert(response.valid());
+		TryReply(std::move(response));
 		return 0;
-	}
-	void HandleContent(std::unique_ptr<ContentHandler> handler) override
-	{
-		assert(handler);
-		m_content = std::move(handler);
 	}
 	
 	void Read();
 	void Stop();
 	void OnRead(std::size_t count);
 	void Reply(const Response& rep);
-	void TryReply()
+	void TryReply(future<Response> response)
 	{
-		if (m_response.valid())
+		assert(response.valid());
+		response.then([this, self = shared_from_this()](auto fut_reply)
 		{
-			m_response.then(
-				[this, self = shared_from_this()](auto fut_reply)
-				{
-					Reply(fut_reply.get());
-				}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
-		}
+			Reply(fut_reply.get());
+		}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
 	}
 	
 	const http::Request&  Request() override {return m_req;}
@@ -126,8 +118,7 @@ private:
 	HTTPParser          m_parser;
 	const RequestDispatcher& m_handler;
 	
-	std::unique_ptr<ContentHandler> m_content;
-	future<http::Response> m_response;
+	std::unique_ptr<ContentHandler> m_content_handler;
 };
 
 ConnectionManager::Entry::Entry(
@@ -160,29 +151,8 @@ void ConnectionManager::Entry::Read()
 void ConnectionManager::Entry::OnRead(std::size_t count)
 {
 	m_parser.Parse(m_read_buffer.begin(), count);
-	
-	if (m_parser.Result() != HPE_OK)
-	{
-		std::cout << "bad request from parser: " << m_req.Uri() << std::endl;
-		
-		if (m_response.valid())
-			TryReply();
-		else
-			Reply({ResponseStatus::bad_request});
-	}
-	
-	else if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
-	{
+	if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
 		Read();
-	}
-	
-	
-	else
-	{
-		assert(m_response.valid());
-		std::cout << "request complete: " << m_req.Uri() << std::endl;
-		TryReply();
-	}
 }
 
 void ConnectionManager::Entry::Reply(const Response& rep)

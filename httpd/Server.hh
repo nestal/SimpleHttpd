@@ -38,6 +38,19 @@ namespace http {
  */
 class Server
 {
+private:
+	template <typename CallableReturnFutureToPromise>
+	struct Adaptor : public ContentHandler
+	{
+		const CallableReturnFutureToPromise& m_callable;
+		ConnectionPtr   m_conn;
+		
+		Adaptor(const CallableReturnFutureToPromise& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
+		
+		future<Response> OnContent(const char *, std::size_t) {return {};}
+		future<Response> Finish() {return m_callable(std::move(m_conn));}
+	};
+
 public:
 	Server() = delete;
 	Server(const Server&) = delete;
@@ -51,26 +64,24 @@ public:
 		const std::string& port
 	);
 
-	/**
-	 * \brief Adds a handler to handle a specific URI
-	 *
-	 * This function specify the Server to use \a handler to handle the requests
-	 * of all URIs that have \a uri as their first subdirectory. The handler must
-	 * be convertible to #RequestHandler.
-	 *
-	 * \tparam Callable     A Callable object that can be converted to #RequestHandler.
-	 * \param uri
-	 * \param handler       The actual function object
-	 *                      It will be called when \a uri is requested.
-	 * \sa #RequestHandler
-	 */
 	template <typename Callable>
 	void AddHandler(const std::string& uri, Callable&& handler)
 	{
-		m_handlers.Add(uri, std::forward<Callable>(handler));
+		m_handlers.Add(uri, [handler=std::forward<Callable>(handler)](const ConnectionPtr& conn)
+		{
+			return std::make_unique<Adaptor>(handler, conn);
+		});
 	}
-	void SetDefaultHandler(RequestHandler handler);
-
+	
+	template <typename Callable>
+	void SetDefaultHandler(Callable&& handler)
+	{
+		m_handlers.SetDefault([handler=std::forward<Callable>(handler)](const ConnectionPtr& conn)
+		{
+			return std::make_unique<Adaptor<Callable>>(handler, conn);
+		});
+	}
+	
 	boost::asio::io_service& IoService();
 	
 private:

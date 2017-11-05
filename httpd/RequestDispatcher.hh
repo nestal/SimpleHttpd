@@ -32,7 +32,7 @@ public:
 	}
 	void SetDefault(RequestHandler handler);
 
-	future<Response> HandleRequest(const ConnectionPtr& c) const noexcept ;
+	ContentHandlerPtr HandleRequest(const ConnectionPtr& c) const noexcept ;
 
 private:
 	std::unordered_map<std::string, RequestHandler> m_map;

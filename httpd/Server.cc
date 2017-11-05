@@ -80,11 +80,6 @@ void Server::DoAwaitStop()
 		});
 }
 
-void Server::SetDefaultHandler(RequestHandler handler)
-{
-	m_handlers.SetDefault(std::move(handler));
-}
-
 /**
  * \brief Get the io_service that runs this server.
  *

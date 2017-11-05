@@ -36,6 +36,7 @@ public:
 	virtual future<http::Response> OnContent(const char *data, std::size_t size) = 0;
 	virtual future<http::Response> Finish() = 0;
 };
+using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
 /**
  * \brief Represents the information required to handle an HTTP request
@@ -58,8 +59,6 @@ public:
 	 * \return Request object of the request
 	 */
 	virtual const http::Request&  Request() = 0;
-	
-	virtual void HandleContent(std::unique_ptr<ContentHandler> handler) = 0;
 
 	/// \brief Returns the io_service that runs the Server
 	///
@@ -107,6 +106,6 @@ using ConnectionPtr = std::shared_ptr<Connection>;
  * in the lambda callback function. Otherwise the Connection objects will
  * be destroyed if the connection is closed by peer or timed out.
  */
-using RequestHandler = std::function<future<Response>(const ConnectionPtr&)>;
+using RequestHandler = std::function<ContentHandlerPtr(const ConnectionPtr&)>;
 
 } // end of namespace
