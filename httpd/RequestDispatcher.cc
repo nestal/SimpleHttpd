@@ -16,19 +16,15 @@
 #include "Response.hh"
 #include "UriString.hh"
 
-#include <cassert>
-
 namespace http {
 
-ContentHandlerPtr RequestDispatcher::HandleRequest(const RequestPtr& c) const noexcept
+ContentHandlerPtr RequestDispatcher::HandleRequest(Request& req) const noexcept
 {
-	assert(c);
-	
-	UriString uri{c->URL()};
+	UriString uri{req.URL()};
 	
 	auto it = m_map.find(uri[0]);
 	auto& handler = (it == m_map.end() ? m_default : it->second);
-	return handler(c);
+	return handler(req);
 }
 
 void RequestDispatcher::Add(const std::string& uri, RequestHandler handler)

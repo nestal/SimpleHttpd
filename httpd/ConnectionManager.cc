@@ -58,7 +58,7 @@ public:
 	}
 	int OnHeaderComplete() override
 	{
-		m_content_handler = m_handler.HandleRequest(shared_from_this());
+		m_content_handler = m_handler.HandleRequest(*this);
 		if (!m_content_handler)
 		{
 			DoReply({HTTP_STATUS_BAD_REQUEST});

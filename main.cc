@@ -11,11 +11,11 @@ int main()
 	boost::asio::io_service ios;
 
 	http::Server s{ios, "0.0.0.0", "8080"};
-	s.SetDefaultHandler([](auto&& conn)
+	s.SetDefaultHandler([](auto&& request)
 	{
 		boost::asio::streambuf buf;
 		std::ostream os{&buf};
-		os << conn->URL() << " not found!";
+		os << request.URL() << " not found!";
 		
 		return http::Response{}.SetContent(buf);
 	});

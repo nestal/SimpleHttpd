@@ -28,7 +28,7 @@ public:
 	void Add(const std::string& uri, RequestHandler handler);
 	void SetDefault(RequestHandler handler);
 
-	ContentHandlerPtr HandleRequest(const RequestPtr& c) const noexcept ;
+	ContentHandlerPtr HandleRequest(Request& req) const noexcept ;
 
 private:
 	std::unordered_map<std::string, RequestHandler> m_map;

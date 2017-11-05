@@ -66,8 +66,6 @@ public:
 	virtual boost::asio::io_service& IoService() = 0;
 };
 
-using RequestPtr = std::shared_ptr<Request>;
-
 /**
  * \brief A function that handles HTTP requests.
  *
@@ -92,6 +90,6 @@ using RequestPtr = std::shared_ptr<Request>;
  * in the lambda callback function. Otherwise the Connection objects will
  * be destroyed if the connection is closed by peer or timed out.
  */
-using RequestHandler = std::function<ContentHandlerPtr(const RequestPtr&)>;
+using RequestHandler = std::function<ContentHandlerPtr(Request&)>;
 
 } // end of namespace
