@@ -48,21 +48,36 @@ public:
 	{
 		m_req.OnHeader(std::move(field), std::move(value));
 	}
-	void OnHeaderComplete() override {}
+	void OnHeaderComplete() override
+	{
+		auto self = shared_from_this();
+		m_handler.HandleRequest(self).then([this, self](auto fut_reply)
+		{
+			Reply(fut_reply.get());
+		}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
+	}
+	
 	void OnContent(const char *data, std::size_t size) override
 	{
-	
+		if (m_content)
+			m_content->OnContent(data, size);
 	}
 	void OnMessageEnd() override
 	{
+		if (m_content)
+			m_content->Finish();
+	}
+	void HandleContent(std::unique_ptr<ContentHandler> handler) override
+	{
+		m_content = std::move(handler);
 	}
 	
 	void Read();
 	void Stop();
 	void OnRead(std::size_t count);
+	void Reply(const Response& rep);
 	
 	const http::Request&  Request() override {return m_req;}
-	void Reply(const Response& rep);
 	io_service& IoService() override
 	{
 		return m_socket.get_io_service();
@@ -86,6 +101,7 @@ private:
 	http::Request       m_req;
 	HTTPParser          m_parser;
 	const RequestDispatcher& m_handler;
+	std::unique_ptr<ContentHandler> m_content;
 };
 
 ConnectionManager::Entry::Entry(
@@ -117,23 +133,16 @@ void ConnectionManager::Entry::Read()
 
 void ConnectionManager::Entry::OnRead(std::size_t count)
 {
-	m_parser.Parse(m_read_buffer.begin(), count);
-	if (m_parser.CurrentProgress() == HTTPParser::Progress::finished)
+	try
 	{
-		if (m_parser.Result() == HPE_OK)
-		{
-			auto& exec = use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service());
-			auto self = shared_from_this();
-			m_handler.HandleRequest(self).then([this, self](auto fut_reply)
-			{
-				Reply(fut_reply.get());
-			}, exec);
-		}
-		else
-			Reply({ResponseStatus::bad_request});
+		m_parser.Parse(m_read_buffer.begin(), count);
+		if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
+			Read();
 	}
-	else
-		Read();
+	catch (std::exception& e)
+	{
+		Reply({ResponseStatus::bad_request});
+	}
 }
 
 void ConnectionManager::Entry::Reply(const Response& rep)

@@ -27,6 +27,14 @@ class Request;
 class Response;
 class HeaderList;
 
+class ContentHandler
+{
+public:
+	virtual ~ContentHandler() = default;
+	virtual void OnContent(const char *data, std::size_t size) = 0;
+	virtual void Finish() = 0;
+};
+
 /**
  * \brief Represents the information required to handle an HTTP request
  *
@@ -48,6 +56,8 @@ public:
 	 * \return Request object of the request
 	 */
 	virtual const http::Request&  Request() = 0;
+	
+	virtual void HandleContent(std::unique_ptr<ContentHandler> handler) = 0;
 
 	/// \brief Returns the io_service that runs the Server
 	///
@@ -96,25 +106,5 @@ using ConnectionPtr = std::shared_ptr<Connection>;
  * be destroyed if the connection is closed by peer or timed out.
  */
 using RequestHandler = std::function<BrightFuture::future<Response>(const ConnectionPtr&)>;
-
-class ContentSink
-{
-public:
-	virtual ~ContentSink() = default;
-	virtual void SinkContent(const char *data, std::size_t size) = 0;
-	virtual void Finish() = 0;
-};
-
-class CustomRequestHandler
-{
-public:
-	virtual ~CustomRequestHandler() = default;
-	
-	virtual std::vector<std::string> Start(std::string&& method, std::string&& url, int major, int minor) = 0 ;
-	virtual ContentSink* HeaderReceived(HeaderList&& headers) = 0;
-	virtual BrightFuture::future<Response> Reply() = 0;
-};
-
-// BrightFuture::future<Response> Connection::RegisterCustomRequestHandler(std::unique_ptr<CustomRequestHandler> handler);
 
 } // end of namespace
