@@ -106,6 +106,19 @@ private:
 		};
 	}
 	
+	// This overload of Adapt() will only be enabled if the return value of the "Callable"
+	// functor is ContentHandlerPtr.
+	template <typename Callable>
+	typename std::enable_if<
+		std::is_convertible<
+			typename std::result_of<Callable(ConnectionPtr)>::type,
+			ContentHandlerPtr
+		>::value,
+		RequestHandler
+	>::type Adapt(Callable&& handler)
+	{
+		return std::forward<Callable>(handler);
+	}
 	
 public:
 	Server() = delete;
