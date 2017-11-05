@@ -23,7 +23,6 @@
 
 namespace http {
 
-class Request;
 class Response;
 class HeaderList;
 class Method;
@@ -46,12 +45,15 @@ using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
  * by the Request class. It also include the response builder: the Response
  * class.
  */
-class Connection
+class Request
 {
 public:
 	virtual std::string URL() const = 0;
 	virtual const HeaderList& Header() const = 0;
 	virtual http::Method Method() const = 0;
+
+	virtual boost::asio::ip::tcp::endpoint Client() const = 0;
+	virtual boost::asio::ip::tcp::endpoint Local() const = 0;
 
 	/// \brief Returns the io_service that runs the Server
 	///
@@ -62,18 +64,9 @@ public:
 	/// \return  The io_service that runs the Server
 	/// \sa Server::IoService()
 	virtual boost::asio::io_service& IoService() = 0;
-	virtual boost::asio::ip::tcp::endpoint Client() const = 0;
-	virtual boost::asio::ip::tcp::endpoint Local() const = 0;
 };
 
-/**
- * \brief shared_ptr to Connection
- *
- * Shared points of Connection are used so frequently that they deserve
- * a shorthand. Typically the implementation of Connection interface
- * will use std::enable_shared_from_this.
- */
-using ConnectionPtr = std::shared_ptr<Connection>;
+using RequestPtr = std::shared_ptr<Request>;
 
 /**
  * \brief A function that handles HTTP requests.
@@ -99,6 +92,6 @@ using ConnectionPtr = std::shared_ptr<Connection>;
  * in the lambda callback function. Otherwise the Connection objects will
  * be destroyed if the connection is closed by peer or timed out.
  */
-using RequestHandler = std::function<ContentHandlerPtr(const ConnectionPtr&)>;
+using RequestHandler = std::function<ContentHandlerPtr(const RequestPtr&)>;
 
 } // end of namespace

@@ -15,7 +15,7 @@
 
 #include "RequestDispatcher.hh"
 
-#include "Request.hh"
+#include "RequestCallback.hh"
 #include "HTTPParser.hh"
 #include "Response.hh"
 #include "HeaderList.hh"
@@ -30,7 +30,7 @@ namespace http {
 using namespace boost::asio;
 
 class ConnectionManager::Entry :
-	public Connection,
+	public Request,
 	public RequestCallback,
 	public std::enable_shared_from_this<Entry>
 {

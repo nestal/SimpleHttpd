@@ -2,7 +2,7 @@
 
 #include "httpd/Server.hh"
 #include "httpd/Response.hh"
-#include "httpd/Request.hh"
+#include "httpd/RequestCallback.hh"
 
 int main()
 {

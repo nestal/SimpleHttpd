@@ -43,21 +43,21 @@ private:
 	class AdaptFutureResponse : public ContentHandler
 	{
 	public:
-		AdaptFutureResponse(const CallableReturnFutureResponse& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
+		AdaptFutureResponse(const CallableReturnFutureResponse& h, RequestPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
 		
 		future<Response> OnContent(const char *, std::size_t) override {return {};}
 		future<Response> Finish() override {return m_callable(std::move(m_conn));}
 		
 	private:
 		const CallableReturnFutureResponse& m_callable;
-		ConnectionPtr   m_conn;
+		RequestPtr   m_conn;
 	};
 
 	template <typename CallableReturnResponse>
 	class AdaptResponse : public ContentHandler
 	{
 	public:
-		AdaptResponse(const CallableReturnResponse& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
+		AdaptResponse(const CallableReturnResponse& h, RequestPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
 		
 		future<Response> OnContent(const char *, std::size_t) override {return {};}
 		future<Response> Finish() override
@@ -69,7 +69,7 @@ private:
 		
 	private:
 		const CallableReturnResponse& m_callable;
-		ConnectionPtr   m_conn;
+		RequestPtr   m_conn;
 	};
 
 	// This overload of Adapt() will only be enabled if the return value of the "CallableReturnFutureResponse"
@@ -77,13 +77,13 @@ private:
 	template <typename CallableReturnFutureResponse>
 	typename std::enable_if<
 		std::is_same<
-			typename std::result_of<CallableReturnFutureResponse(ConnectionPtr)>::type,
+			typename std::result_of<CallableReturnFutureResponse(RequestPtr)>::type,
 			BrightFuture::future<Response>
 		>::value,
 		RequestHandler
 	>::type Adapt(CallableReturnFutureResponse&& handler)
 	{
-		return [handler=std::forward<CallableReturnFutureResponse>(handler)](const ConnectionPtr& conn)
+		return [handler=std::forward<CallableReturnFutureResponse>(handler)](const RequestPtr& conn)
 		{
 			return std::make_unique<AdaptFutureResponse<CallableReturnFutureResponse>>(handler, conn);
 		};
@@ -94,13 +94,13 @@ private:
 	template <typename CallableReturnResponse>
 	typename std::enable_if<
 		std::is_same<
-			typename std::result_of<CallableReturnResponse(ConnectionPtr)>::type,
+			typename std::result_of<CallableReturnResponse(RequestPtr)>::type,
 			Response
 		>::value,
 		RequestHandler
 	>::type Adapt(CallableReturnResponse&& handler)
 	{
-		return [handler=std::forward<CallableReturnResponse>(handler)](const ConnectionPtr& conn)
+		return [handler=std::forward<CallableReturnResponse>(handler)](const RequestPtr& conn)
 		{
 			return std::make_unique<AdaptResponse<CallableReturnResponse>>(handler, conn);
 		};
@@ -111,7 +111,7 @@ private:
 	template <typename Callable>
 	typename std::enable_if<
 		std::is_convertible<
-			typename std::result_of<Callable(ConnectionPtr)>::type,
+			typename std::result_of<Callable(RequestPtr)>::type,
 			ContentHandlerPtr
 		>::value,
 		RequestHandler

@@ -12,7 +12,7 @@
 
 #include "RequestDispatcher.hh"
 
-#include "Request.hh"
+#include "RequestCallback.hh"
 #include "Response.hh"
 #include "UriString.hh"
 
@@ -20,7 +20,7 @@
 
 namespace http {
 
-ContentHandlerPtr RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
+ContentHandlerPtr RequestDispatcher::HandleRequest(const RequestPtr& c) const noexcept
 {
 	assert(c);
 	

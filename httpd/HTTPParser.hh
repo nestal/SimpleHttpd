@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "Request.hh"
+#include "RequestCallback.hh"
 #include "http-parser/http_parser.h"
 
 #include <iosfwd>
