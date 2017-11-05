@@ -25,11 +25,7 @@ class RequestDispatcher
 public:
 	RequestDispatcher() = default;
 
-	template <typename Callback>
-	void Add(const std::string& uri, Callback&& handler)
-	{
-		m_map.emplace(uri, std::forward<Callback>(handler));
-	}
+	void Add(const std::string& uri, RequestHandler handler);
 	void SetDefault(RequestHandler handler);
 
 	ContentHandlerPtr HandleRequest(const ConnectionPtr& c) const noexcept ;

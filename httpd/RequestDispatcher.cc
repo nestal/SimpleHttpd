@@ -31,6 +31,11 @@ ContentHandlerPtr RequestDispatcher::HandleRequest(const ConnectionPtr& c) const
 	return handler(c);
 }
 
+void RequestDispatcher::Add(const std::string& uri, RequestHandler handler)
+{
+	m_map.emplace(uri, std::move(handler));
+}
+
 void RequestDispatcher::SetDefault(RequestHandler handler)
 {
 	m_default = std::move(handler);

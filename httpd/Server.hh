@@ -40,22 +40,48 @@ class Server
 {
 private:
 	template <typename CallableReturnFutureResponse>
-	struct AdaptFutureResponse : public ContentHandler
+	class AdaptFutureResponse : public ContentHandler
 	{
-		const CallableReturnFutureResponse& m_callable;
-		ConnectionPtr   m_conn;
-		
+	public:
 		AdaptFutureResponse(const CallableReturnFutureResponse& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
 		
-		future<Response> OnContent(const char *, std::size_t) {return {};}
-		future<Response> Finish() {return m_callable(std::move(m_conn));}
+		future<Response> OnContent(const char *, std::size_t) override {return {};}
+		future<Response> Finish() override {return m_callable(std::move(m_conn));}
+		
+	private:
+		const CallableReturnFutureResponse& m_callable;
+		ConnectionPtr   m_conn;
 	};
 
+	template <typename CallableReturnResponse>
+	class AdaptResponse : public ContentHandler
+	{
+	public:
+		AdaptResponse(const CallableReturnResponse& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
+		
+		future<Response> OnContent(const char *, std::size_t) override {return {};}
+		future<Response> Finish() override
+		{
+			promise<Response> p;
+			p.set_value(m_callable(std::move(m_conn)));
+			return p.get_future();
+		}
+		
+	private:
+		const CallableReturnResponse& m_callable;
+		ConnectionPtr   m_conn;
+	};
+
+	// This overload of Adapt() will only be enabled if the return value of the "CallableReturnFutureResponse"
+	// functor is a future<Response>.
 	template <typename CallableReturnFutureResponse>
-	typename std::enable_if<std::is_same<
-		typename std::result_of<CallableReturnFutureResponse(ConnectionPtr)>::type,
-		BrightFuture::future<Response>
-	>::value, RequestHandler>::type Adapt(CallableReturnFutureResponse&& handler)
+	typename std::enable_if<
+		std::is_same<
+			typename std::result_of<CallableReturnFutureResponse(ConnectionPtr)>::type,
+			BrightFuture::future<Response>
+		>::value,
+		RequestHandler
+	>::type Adapt(CallableReturnFutureResponse&& handler)
 	{
 		return [handler=std::forward<CallableReturnFutureResponse>(handler)](const ConnectionPtr& conn)
 		{
@@ -63,28 +89,16 @@ private:
 		};
 	}
 	
+	// This overload of Adapt() will only be enabled if the return value of the "CallableReturnFutureResponse"
+	// functor is a Response.
 	template <typename CallableReturnResponse>
-	struct AdaptResponse : public ContentHandler
-	{
-		const CallableReturnResponse& m_callable;
-		ConnectionPtr   m_conn;
-		
-		AdaptResponse(const CallableReturnResponse& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
-		
-		future<Response> OnContent(const char *, std::size_t) {return {};}
-		future<Response> Finish()
-		{
-			promise<Response> p;
-			p.set_value(m_callable(std::move(m_conn)));
-			return p.get_future();
-		}
-	};
-
-	template <typename CallableReturnResponse>
-	typename std::enable_if<std::is_same<
-		typename std::result_of<CallableReturnResponse(ConnectionPtr)>::type,
-		Response
-	>::value, RequestHandler>::type Adapt(CallableReturnResponse&& handler)
+	typename std::enable_if<
+		std::is_same<
+			typename std::result_of<CallableReturnResponse(ConnectionPtr)>::type,
+			Response
+		>::value,
+		RequestHandler
+	>::type Adapt(CallableReturnResponse&& handler)
 	{
 		return [handler=std::forward<CallableReturnResponse>(handler)](const ConnectionPtr& conn)
 		{

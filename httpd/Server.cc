@@ -69,15 +69,14 @@ void Server::AsyncAccept()
 
 void Server::DoAwaitStop()
 {
-	m_signals.async_wait(
-		[this](boost::system::error_code, int)
-		{
-			// The server is stopped by cancelling all outstanding asynchronous
-			// operations. Once all operations have finished the io_service::run()
-			// call will exit.
-			m_acceptor.close();
-			m_conn.StopAll();
-		});
+	m_signals.async_wait([this](boost::system::error_code, int)
+	{
+		// The server is stopped by cancelling all outstanding asynchronous
+		// operations. Once all operations have finished the io_service::run()
+		// call will exit.
+		m_acceptor.close();
+		m_conn.StopAll();
+	});
 }
 
 /**
