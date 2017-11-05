@@ -29,7 +29,7 @@ int main()
 		}
 		virtual BrightFuture::future<http::Response> Finish() override
 		{
-			http::Response rep{http::ResponseStatus::ok};
+			http::Response rep{HTTP_STATUS_OK};
 			rep.SetContent(m_buf);
 			
 			BrightFuture::promise<http::Response> promise;
