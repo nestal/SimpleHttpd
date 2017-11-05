@@ -44,13 +44,13 @@ public:
 	Response& SetContent(std::vector<char>&& buf);
 	Response& SetContent(const boost::asio::streambuf& buf);
 	
+	BrightFuture::future<boost::system::error_code> Send(boost::asio::ip::tcp::socket& sock) const;
+
+private:
 	/// Convert the reply into a vector of buffers. The buffers do not own the
 	/// underlying memory blocks, therefore the reply object must remain valid and
 	/// not be changed until the write operation has completed.
 	std::vector<boost::asio::const_buffer> ToBuffers() const;
-
-	BrightFuture::future<boost::system::error_code> Send(boost::asio::ip::tcp::socket& sock) const;
-	// virtual to allow different implementation of content?
 	
 private:
 	/// Response status, 200=OK
