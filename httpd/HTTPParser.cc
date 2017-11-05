@@ -44,26 +44,29 @@ HTTPParser::HTTPParser()
 		auto pthis = reinterpret_cast<HTTPParser*>(p->data);
 		assert(pthis);
 		pthis->AddHeader();
+		int ret = 0;
 		if (pthis->m_output)
-			pthis->m_output->OnHeaderComplete();
+			ret = pthis->m_output->OnHeaderComplete();
 		pthis->m_progress = Progress::content;
-		return 0;
+		return ret;
 	};
 	m_setting.on_body = [](http_parser* p, const char *data, size_t size)
 	{
 		auto pthis = reinterpret_cast<HTTPParser *>(p->data);
 		assert(pthis);
+		int ret = 0;
 		if (pthis->m_output)
-			pthis->m_output->OnContent(data, size);
-		return 0;
+			ret = pthis->m_output->OnContent(data, size);
+		return ret;
 	};
 	m_setting.on_message_complete = [](http_parser *p)
 	{
 		auto pthis = reinterpret_cast<HTTPParser *>(p->data);
 		pthis->m_progress = Progress::finished;
+		int ret = 0 ;
 		if (pthis->m_output)
-			pthis->m_output->OnMessageEnd();
-		return 0;
+			ret = pthis->m_output->OnMessageEnd();
+		return ret;
 	};
 	
 	m_parser.data = this;

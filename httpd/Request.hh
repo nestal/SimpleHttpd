@@ -29,9 +29,9 @@ public:
 	
 	virtual void OnMessageStart(http::Method method, std::string&& url, int major, int minor) = 0;
 	virtual void OnHeader(std::string&& field, std::string&& value) = 0;
-	virtual void OnHeaderComplete() = 0;
-	virtual void OnContent(const char *data, std::size_t size) = 0;
-	virtual void OnMessageEnd() = 0;
+	virtual int OnHeaderComplete() = 0;
+	virtual int OnContent(const char *data, std::size_t size) = 0;
+	virtual int OnMessageEnd() = 0;
 };
 
 /**
@@ -44,9 +44,9 @@ public:
 
 	void OnMessageStart(http::Method method, std::string&& url, int major, int minor) override;
 	void OnHeader(std::string&& field, std::string&& value) override;
-	void OnHeaderComplete() override;
-	void OnContent(const char *data, std::size_t size) override;
-	void OnMessageEnd() override;
+	int OnHeaderComplete() override;
+	int OnContent(const char *data, std::size_t size) override;
+	int OnMessageEnd() override;
 	
 	http::Method Method() const;
 	int MajorVersion() const;

@@ -58,19 +58,20 @@ void Request::OnHeader(std::string&& field, std::string&& value)
 	m_headers.Add({field, value});
 }
 
-void Request::OnContent(const char *data, std::size_t size)
+int Request::OnContent(const char *data, std::size_t size)
 {
 	m_content.append(data, size);
+	return 0;
 }
 
-void Request::OnMessageEnd()
+int Request::OnMessageEnd()
 {
-
+	return 0;
 }
 
-void Request::OnHeaderComplete()
+int Request::OnHeaderComplete()
 {
-
+	return 0;
 }
 	
 } // end of namespace

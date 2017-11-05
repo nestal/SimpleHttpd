@@ -33,10 +33,8 @@ class ContentHandler
 {
 public:
 	virtual ~ContentHandler() = default;
-	virtual void OnContent(const char *data, std::size_t size) = 0;
-	virtual void Finish() = 0;
-	
-	virtual future<http::Response> Response() = 0;
+	virtual future<http::Response> OnContent(const char *data, std::size_t size) = 0;
+	virtual future<http::Response> Finish() = 0;
 };
 
 /**
@@ -61,7 +59,7 @@ public:
 	 */
 	virtual const http::Request&  Request() = 0;
 	
-	virtual future<http::Response> HandleContent(std::unique_ptr<ContentHandler> handler) = 0;
+	virtual void HandleContent(std::unique_ptr<ContentHandler> handler) = 0;
 
 	/// \brief Returns the io_service that runs the Server
 	///

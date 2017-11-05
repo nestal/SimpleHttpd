@@ -22,6 +22,7 @@
 #include "executor/BoostAsioExecutor.hh"
 
 #include <cassert>
+#include <iostream>
 
 namespace http {
 
@@ -48,38 +49,57 @@ public:
 	{
 		m_req.OnHeader(std::move(field), std::move(value));
 	}
-	void OnHeaderComplete() override
+	int OnHeaderComplete() override
 	{
 		m_response = m_handler.HandleRequest(shared_from_this());
+		
+		// Either we have a response from the request handler, or the request handler
+		// set a ContentHandler which we can get a response when it finishes
+		return m_response.valid() || m_content ? 0 : -1;
 	}
 	
-	void OnContent(const char *data, std::size_t size) override
+	int OnContent(const char *data, std::size_t size) override
 	{
+		assert(!m_response.valid());
 		if (m_content)
-			m_content->OnContent(data, size);
+			m_response = m_content->OnContent(data, size);
+		
+		// pre-mature response
+		return m_response.valid() ? -1 : 0;
 	}
-	void OnMessageEnd() override
+	int OnMessageEnd() override
 	{
 		if (m_content)
-			m_content->Finish();
+		{
+			auto r = m_content->Finish();
+			if (!m_response.valid())
+				m_response = std::move(r);
+		}
 		
 		assert(m_response.valid());
-		m_response.then([this, self=shared_from_this()](auto fut_reply)
-		{
-			Reply(fut_reply.get());
-		}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
+		return 0;
 	}
-	BrightFuture::future<http::Response> HandleContent(std::unique_ptr<ContentHandler> handler) override
+	void HandleContent(std::unique_ptr<ContentHandler> handler) override
 	{
 		assert(handler);
 		m_content = std::move(handler);
-		return m_content->Response();
 	}
 	
 	void Read();
 	void Stop();
 	void OnRead(std::size_t count);
 	void Reply(const Response& rep);
+	void TryReply()
+	{
+		if (m_response.valid())
+		{
+			m_response.then(
+				[this, self = shared_from_this()](auto fut_reply)
+				{
+					Reply(fut_reply.get());
+				}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
+		}
+	}
 	
 	const http::Request&  Request() override {return m_req;}
 	io_service& IoService() override
@@ -142,10 +162,27 @@ void ConnectionManager::Entry::OnRead(std::size_t count)
 	m_parser.Parse(m_read_buffer.begin(), count);
 	
 	if (m_parser.Result() != HPE_OK)
-		Reply({ResponseStatus::bad_request});
+	{
+		std::cout << "bad request from parser: " << m_req.Uri() << std::endl;
+		
+		if (m_response.valid())
+			TryReply();
+		else
+			Reply({ResponseStatus::bad_request});
+	}
 	
 	else if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
+	{
 		Read();
+	}
+	
+	
+	else
+	{
+		assert(m_response.valid());
+		std::cout << "request complete: " << m_req.Uri() << std::endl;
+		TryReply();
+	}
 }
 
 void ConnectionManager::Entry::Reply(const Response& rep)
