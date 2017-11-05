@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include "BrightFuture.hh"
+
 #include "http-parser/http_parser.h"
 
 #include <boost/asio.hpp>
@@ -47,7 +49,7 @@ public:
 	/// not be changed until the write operation has completed.
 	std::vector<boost::asio::const_buffer> ToBuffers() const;
 
-	// void Send(stream_socket& sock);
+	BrightFuture::future<boost::system::error_code> Send(boost::asio::ip::tcp::socket& sock) const;
 	// virtual to allow different implementation of content?
 	
 private:

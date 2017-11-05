@@ -157,19 +157,19 @@ void ConnectionManager::Entry::OnRead(std::size_t count)
 
 void ConnectionManager::Entry::Reply(const Response& rep)
 {
-	async_write(m_socket, rep.ToBuffers(),
-		[this, self=shared_from_this()](boost::system::error_code ec, std::size_t c)
+	rep.Send(m_socket).then([this, self=shared_from_this()](auto&& fut_ec)
+	{
+		auto ec = fut_ec.get();
+		if (!ec)
 		{
-			if (!ec)
-			{
-				// Initiate graceful connection closure.
-				boost::system::error_code ignored_ec;
-				m_socket.shutdown(ip::tcp::socket::shutdown_both, ignored_ec);
-			}
-			
-			if (ec != boost::asio::error::operation_aborted)
-				m_parent.Stop(shared_from_this());
-		});
+			// Initiate graceful connection closure.
+			boost::system::error_code ignored_ec;
+			m_socket.shutdown(ip::tcp::socket::shutdown_both, ignored_ec);
+		}
+		
+		if (ec != boost::asio::error::operation_aborted)
+			m_parent.Stop(shared_from_this());
+	});
 }
 
 void ConnectionManager::Entry::Stop()
