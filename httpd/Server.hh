@@ -15,6 +15,7 @@
 #include "ConnectionManager.hh"
 #include "RequestHandler.hh"
 #include "RequestDispatcher.hh"
+#include "AdaptToRequestHandler.hh"
 
 #include <boost/asio.hpp>
 #include <string>
@@ -38,78 +39,6 @@ namespace http {
  */
 class Server
 {
-private:
-	template <typename Callable>
-	class AdaptFutureResponse : public ContentHandler
-	{
-	public:
-		AdaptFutureResponse(const Callable& h, Request& conn) : m_callable{h}, m_conn{conn} {}
-		
-		future<Response> OnContent(const char *, std::size_t) override {return {};}
-		future<Response> Finish() override {return DoFinish();}
-		
-	private:
-		// This overload of DoFinish() will only be enabled if the return value of the "Callable"
-		// functor is a future<Response>.
-		template <typename C=Callable>
-		typename std::enable_if<
-			std::is_same<
-				typename std::result_of<C(Request&)>::type,
-				future<Response>
-			>::value,
-			future<Response>
-		>::type DoFinish() {return m_callable(std::move(m_conn));}
-		
-		// This overload of DoFinish() will only be enabled if the return value of the "Callable"
-		// functor is a Response.
-		template <typename C=Callable>
-		typename std::enable_if<
-			std::is_same<
-				typename std::result_of<C(Request&)>::type,
-				Response
-			>::value,
-			future<Response>
-		>::type	DoFinish()
-		{
-			promise<Response> p;
-			p.set_value(m_callable(std::move(m_conn)));
-			return p.get_future();
-		}
-		
-	private:
-		const Callable& m_callable;
-		Request&        m_conn;
-	};
-
-	template <typename Callable>
-	typename std::enable_if<
-		!std::is_convertible<
-			typename std::result_of<Callable(Request&)>::type,
-			ContentHandlerPtr
-		>::value,
-		RequestHandler
-	>::type AdaptToRequestHandler(Callable&& handler)
-	{
-		return [handler=std::forward<Callable>(handler)](Request& conn)
-		{
-			return std::make_unique<AdaptFutureResponse<Callable>>(handler, conn);
-		};
-	}
-	
-	// This overload of Adapt() will only be enabled if the return value of the "Callable"
-	// functor is convertible to ContentHandlerPtr.
-	template <typename Callable>
-	typename std::enable_if<
-		std::is_convertible<
-			typename std::result_of<Callable(Request&)>::type,
-			ContentHandlerPtr
-		>::value,
-		RequestHandler
-	>::type AdaptToRequestHandler(Callable&& handler)
-	{
-		return std::forward<Callable>(handler);
-	}
-	
 public:
 	Server() = delete;
 	Server(const Server&) = delete;
