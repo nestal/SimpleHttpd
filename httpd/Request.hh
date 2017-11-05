@@ -14,6 +14,7 @@
 
 #include "HeaderList.hh"
 #include "UriString.hh"
+#include "Enum.hh"
 
 #include <boost/asio/ip/tcp.hpp>
 
@@ -26,8 +27,9 @@ class RequestCallback
 public:
 	virtual ~RequestCallback() = default;
 	
-	virtual void OnMessageStart(std::string&& method, std::string&& url, int major, int minor) = 0;
+	virtual void OnMessageStart(http::Method method, std::string&& url, int major, int minor) = 0;
 	virtual void OnHeader(std::string&& field, std::string&& value) = 0;
+	virtual void OnHeaderComplete() = 0;
 	virtual void OnContent(const char *data, std::size_t size) = 0;
 	virtual void OnMessageEnd() = 0;
 };
@@ -40,12 +42,13 @@ class Request : public RequestCallback
 public:
 	Request() = default;
 
-	void OnMessageStart(std::string&& method, std::string&& url, int major, int minor) override;
+	void OnMessageStart(http::Method method, std::string&& url, int major, int minor) override;
 	void OnHeader(std::string&& field, std::string&& value) override;
+	void OnHeaderComplete() override;
 	void OnContent(const char *data, std::size_t size) override;
 	void OnMessageEnd() override;
 	
-	const std::string& Method() const;
+	http::Method Method() const;
 	int MajorVersion() const;
 	int MinorVersion() const;
 	const UriString& Uri() const;
@@ -54,7 +57,7 @@ public:
 	const std::string& Content() const;
 	
 private:
-	std::string m_method;
+	http::Method m_method;
 	UriString   m_uri;
 	
 	int m_major = 0;

@@ -19,24 +19,21 @@
 
 namespace http {
 
-class HttpParser
+class HTTPParser
 {
 public:
 	enum class Progress {start, header, content, finished};
 	
 public:
-	HttpParser();
-	HttpParser(HttpParser&&) = delete;
-	HttpParser(const HttpParser&) = delete;
-	HttpParser& operator=(HttpParser&&) = delete;
-	HttpParser& operator=(const HttpParser&) = delete;
+	HTTPParser();
+	HTTPParser(HTTPParser&&) = delete;
+	HTTPParser(const HTTPParser&) = delete;
+	HTTPParser& operator=(HTTPParser&&) = delete;
+	HTTPParser& operator=(const HTTPParser&) = delete;
 	
 	void SetCallback(RequestCallback& callback);
 	
 	std::size_t Parse(const char *data, std::size_t size);
-	
-	std::string URL() const;
-	http_method Method() const;
 	
 	http_errno Result() const;
 	Progress CurrentProgress() const;
@@ -62,6 +59,6 @@ private:
 	::http_parser           m_parser{};
 };
 
-std::ostream& operator<<(std::ostream& os, HttpParser::Progress p);
+std::ostream& operator<<(std::ostream& os, HTTPParser::Progress p);
 
 } // end of namespace

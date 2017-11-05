@@ -16,7 +16,7 @@
 #include "RequestDispatcher.hh"
 
 #include "Request.hh"
-#include "HttpParser.hh"
+#include "HTTPParser.hh"
 #include "Response.hh"
 
 #include "executor/BoostAsioExecutor.hh"
@@ -62,7 +62,7 @@ private:
 	
 	ConnectionManager&  m_parent;
 	http::Request       m_req;
-	HttpParser          m_parser;
+	HTTPParser          m_parser;
 	const RequestDispatcher& m_handler;
 };
 
@@ -87,7 +87,7 @@ void ConnectionManager::Entry::Read()
 			if (!error)
 			{
 				m_parser.Parse(m_read_buffer.begin(), count);
-				if (m_parser.CurrentProgress() == HttpParser::Progress::finished)
+				if (m_parser.CurrentProgress() == HTTPParser::Progress::finished)
 				{
 					if (m_parser.Result() == HPE_OK)
 					{

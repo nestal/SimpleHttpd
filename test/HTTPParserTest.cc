@@ -12,16 +12,16 @@
 
 #include <iostream>
 #include "http-parser/http_parser.h"
-#include "httpd/HttpParser.hh"
+#include "httpd/HTTPParser.hh"
 
 #include "BrightFuture/test/catch.hpp"
 
 using namespace http;
 
-TEST_CASE("HttpParser GET simple request", "[normal]")
+TEST_CASE("HTTPParser GET simple request", "[normal]")
 {
 	Request result;
-	HttpParser subject;
+	HTTPParser subject;
 	subject.SetCallback(result);
 	const char request[] = "GET /some/path/to/url HTTP/1.1\r\n"
 		"Host: localhost:8080\r\n"
@@ -34,11 +34,11 @@ TEST_CASE("HttpParser GET simple request", "[normal]")
 	{
 		auto r = subject.Parse(request, size);
 		CHECK(r == size);
-		CHECK(subject.CurrentProgress() == HttpParser::Progress::finished);
+		CHECK(subject.CurrentProgress() == HTTPParser::Progress::finished);
 		CHECK(subject.Result() == HPE_OK);
 		
 		CHECK(result.Uri() == "/some/path/to/url");
-		CHECK(result.Method() == "GET");
+		CHECK(result.Method() == HTTP_GET);
 		CHECK(result.Headers().Count() == 3);
 		CHECK(result.Headers().Field("Host") == "localhost:8080");
 	}
@@ -49,19 +49,17 @@ TEST_CASE("HttpParser GET simple request", "[normal]")
 		auto r = subject.Parse(request, pass1);
 		CHECK(r > 0);
 		CHECK(r <= pass1);
-		CHECK(subject.CurrentProgress() == HttpParser::Progress::header);
-		CHECK(subject.URL() == "/some/path/to/url");
 		
 		auto r2 = subject.Parse(request+r, size-r);
 		CHECK(r2 == size-r);
 		CHECK(subject.Result() == HPE_OK);
 		
-		CHECK(result.Method() == "GET");
+		CHECK(result.Method() == HTTP_GET);
 		CHECK(result.Headers().Count() == 3);
 	}
 }
 
-TEST_CASE("HttpParser POST request content", "[normal]")
+TEST_CASE("HTTPParser POST request content", "[normal]")
 {
 	const char request[] =
 		"POST / HTTP/1.1\r\n"
@@ -76,13 +74,13 @@ TEST_CASE("HttpParser POST request content", "[normal]")
 	const auto size = sizeof(request)-1;
 
 	Request result;
-	HttpParser subject;
+	HTTPParser subject;
 	subject.SetCallback(result);
 	auto r = subject.Parse(request, size);
 	CHECK(r == size);
-	CHECK(subject.CurrentProgress() == HttpParser::Progress::finished);
+	CHECK(subject.CurrentProgress() == HTTPParser::Progress::finished);
 	CHECK(subject.Result() == HPE_OK);
 	
-	CHECK(result.Method() == "POST");
+	CHECK(result.Method() == HTTP_GET);
 	CHECK(result.Content() == "hello=world!");
 }

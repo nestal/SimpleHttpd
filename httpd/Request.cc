@@ -15,7 +15,7 @@
 
 namespace http {
 
-const std::string& Request::Method() const
+http::Method Request::Method() const
 {
 	return m_method;
 }
@@ -45,9 +45,9 @@ const std::string& Request::Content() const
 	return m_content;
 }
 
-void Request::OnMessageStart(std::string&& method, std::string&& url, int major, int minor)
+void Request::OnMessageStart(http::Method method, std::string&& url, int major, int minor)
 {
-	m_method = std::move(method);
+	m_method = method;
 	m_uri.Str(std::move(url));
 	m_major = major;
 	m_minor = minor;
@@ -64,6 +64,11 @@ void Request::OnContent(const char *data, std::size_t size)
 }
 
 void Request::OnMessageEnd()
+{
+
+}
+
+void Request::OnHeaderComplete()
 {
 
 }
