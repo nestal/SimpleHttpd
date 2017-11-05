@@ -57,12 +57,12 @@ public:
 
 	Response(ResponseStatus s);
 	
-	void SetStatus(ResponseStatus s);
-	void SetContentType(const std::string& type);
-	void AddHeader(const std::string& header, const std::string& value);
+	Response& SetStatus(ResponseStatus s);
+	Response& SetContentType(const std::string& type);
+	Response& AddHeader(const std::string& header, const std::string& value);
 
-	void SetContent(std::vector<char>&& buf);
-	void SetContent(const boost::asio::streambuf& buf);
+	Response& SetContent(std::vector<char>&& buf);
+	Response& SetContent(const boost::asio::streambuf& buf);
 	
 	/// Convert the reply into a vector of buffers. The buffers do not own the
 	/// underlying memory blocks, therefore the reply object must remain valid and

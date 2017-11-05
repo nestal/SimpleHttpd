@@ -240,35 +240,40 @@ std::string to_string(ResponseStatus status)
 
 } // namespace stock_replies
 
-void Response::SetStatus(ResponseStatus s)
+Response& Response::SetStatus(ResponseStatus s)
 {
 	m_status = s;
+	return *this;
 }
 
-void Response::SetContentType(const std::string& type)
+Response& Response::SetContentType(const std::string& type)
 {
 	m_content_type = "Content-Type: " + type + "\r\n";
+	return *this;
 }
 
-void Response::AddHeader(const std::string& header, const std::string& value)
+Response& Response::AddHeader(const std::string& header, const std::string& value)
 {
 	m_other_headers += (header + ": " + value + "\r\n");
+	return *this;
 }
 
-void Response::SetContent(std::vector<char>&& buf)
+Response& Response::SetContent(std::vector<char>&& buf)
 {
 	m_content = std::move(buf);
 	
 	// construct Content-Length header with the actual length of content
 	m_content_length = "Content-Length: " + std::to_string(m_content.size()) + "\r\n";
+	
+	return *this;
 }
 
-void Response::SetContent(const boost::asio::streambuf& buf)
+Response& Response::SetContent(const boost::asio::streambuf& buf)
 {
 	std::vector<char> content(buf.size());
 	buffer_copy(boost::asio::buffer(content), buf.data());
 	
-	SetContent(std::move(content));
+	return SetContent(std::move(content));
 }
 
 Response::Response(ResponseStatus s) : m_status{s}

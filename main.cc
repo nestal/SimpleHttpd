@@ -10,41 +10,37 @@ int main()
 	boost::asio::io_service ios;
 
 	http::Server s{ios, "0.0.0.0", "8080"};
-	s.SetDefaultHandler([](auto&& conn)
+	s.SetDefaultHandler([](auto&&)
 	{
-		http::Response rep{http::ResponseStatus::ok};
-
 		boost::asio::streambuf buf;
 		std::ostream os{&buf};
 		os << "hello promise!";
 		
-		rep.SetContent(buf);
-		return rep;
+		return http::Response{}.SetContent(buf);
 	});
 	
-	class SaveContent : public http::ContentHandler
+	class EchoContent : public http::ContentHandler
 	{
 	public:
 		BrightFuture::future<http::Response> OnContent(const char *data, std::size_t size) override
 		{
+			m_buf.sputn(data, size);
 			return {};
 		}
 		virtual BrightFuture::future<http::Response> Finish() override
 		{
-			boost::asio::streambuf buf;
-			std::ostream os{&buf};
-			
-			os << "this is a ContentHandler!";
-			
 			http::Response rep{http::ResponseStatus::ok};
-			rep.SetContent(buf);
+			rep.SetContent(m_buf);
 			
 			BrightFuture::promise<http::Response> promise;
 			promise.set_value(std::move(rep));
 			return promise.get_future();
 		}
+		
+	private:
+		boost::asio::streambuf m_buf;
 	};
-	s.AddHandler("upload", [](auto&&){return std::make_unique<SaveContent>();});
+	s.AddHandler("echo", [](auto&&){return std::make_unique<EchoContent>();});
 	ios.run();
 	return 0;
 }
