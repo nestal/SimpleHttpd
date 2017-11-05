@@ -52,17 +52,6 @@ HeaderList::iterator HeaderList::end() const
 	return m_.end();
 }
 
-std::size_t HeaderList::ContentLength() const
-{
-	if (!m_content_length)
-	{
-		auto& str = Field("Content-Length");
-		m_content_length = (str.empty() ? 0 : std::stoull(str));
-	}
-
-	return m_content_length.get();
-}
-
 std::size_t HeaderList::Count() const
 {
 	return m_.size();

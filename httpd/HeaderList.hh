@@ -28,10 +28,6 @@ public:
 	{
 		std::string name;
 		std::string value;
-
-		Header(const std::string& n, const std::string& v) : name(n), value(v)
-		{
-		}
 	};
 
 	using iterator = std::vector<Header>::const_iterator;
@@ -51,14 +47,8 @@ public:
 	iterator begin() const;
 	iterator end() const;
 
-	// common header fields
-	std::size_t ContentLength() const;
-
 private:
 	std::vector<Header> m_;
-
-	// cache values
-	mutable boost::optional<std::size_t> m_content_length;
 };
 
 } // end of namespace

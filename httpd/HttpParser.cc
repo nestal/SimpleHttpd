@@ -44,13 +44,13 @@ HttpParser::HttpParser()
 		auto pthis = reinterpret_cast<HttpParser*>(p->data);
 		assert(pthis);
 		pthis->AddHeader();
+		pthis->m_progress = Progress::content;
 		return 0;
 	};
 	m_setting.on_body = [](http_parser* p, const char *data, size_t size)
 	{
 		auto pthis = reinterpret_cast<HttpParser *>(p->data);
 		assert(pthis);
-		pthis->m_progress = Progress::content;
 		if (pthis->m_output)
 			pthis->m_output->OnContent(data, size);
 		return 0;
@@ -80,7 +80,7 @@ int HttpParser::OnHeaderField(const char *data, std::size_t size)
 		if (m_output)
 			m_output->OnMessageStart(
 				http_method_str(static_cast<http_method >(m_parser.method)),
-				std::move(m_url),
+				std::string{m_url},
 				m_parser.http_major,
 				m_parser.http_minor
 			);

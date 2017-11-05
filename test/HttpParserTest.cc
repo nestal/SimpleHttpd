@@ -44,11 +44,13 @@ TEST_CASE("HttpParser GET simple request", "[normal]")
 	}
 	SECTION("two pass")
 	{
-		const auto pass1 = 10;
+		const auto pass1 = 40;
 		CHECK(size > pass1);
 		auto r = subject.Parse(request, pass1);
 		CHECK(r > 0);
 		CHECK(r <= pass1);
+		CHECK(subject.CurrentProgress() == HttpParser::Progress::header);
+		CHECK(subject.URL() == "/some/path/to/url");
 		
 		auto r2 = subject.Parse(request+r, size-r);
 		CHECK(r2 == size-r);
