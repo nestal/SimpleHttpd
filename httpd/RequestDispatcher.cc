@@ -20,7 +20,7 @@
 
 namespace http {
 
-BrightFuture::future<Response> RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
+future<Response> RequestDispatcher::HandleRequest(const ConnectionPtr& c) const noexcept
 {
 	assert(c);
 	

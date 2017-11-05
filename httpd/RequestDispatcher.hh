@@ -16,7 +16,7 @@
 
 #include "RequestHandler.hh"
 
-#include <map>
+#include <unordered_map>
 
 namespace http {
 
@@ -32,7 +32,7 @@ public:
 	}
 	void SetDefault(RequestHandler handler);
 
-	BrightFuture::future<Response> HandleRequest(const ConnectionPtr& c) const noexcept ;
+	future<Response> HandleRequest(const ConnectionPtr& c) const noexcept ;
 
 private:
 	std::unordered_map<std::string, RequestHandler> m_map;
