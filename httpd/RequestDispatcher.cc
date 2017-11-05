@@ -24,7 +24,7 @@ ContentHandlerPtr RequestDispatcher::HandleRequest(const ConnectionPtr& c) const
 {
 	assert(c);
 	
-	UriString uri{c->Request().Uri()};
+	UriString uri{c->URL()};
 	
 	auto it = m_map.find(uri[0]);
 	auto& handler = (it == m_map.end() ? m_default : it->second);

@@ -16,6 +16,7 @@ namespace http {
 
 HTTPParser::HTTPParser()
 {
+	::http_parser_settings_init(&m_setting);
 	m_setting.on_message_begin = [](http_parser*)
 	{
 		return 0;

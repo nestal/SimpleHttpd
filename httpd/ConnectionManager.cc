@@ -130,7 +130,21 @@ public:
 		}, use_service<Executor>(IoService()));
 	}
 	
-	const http::Request&  Request() override {return m_req;}
+	std::string URL() const override
+	{
+		return m_req.Uri().Str();
+	}
+	
+	const HeaderList& Header() const override
+	{
+		return m_req.Headers();
+	}
+	
+	http::Method Method() const override
+	{
+		return m_req.Method();
+	}
+	
 	io_service& IoService() override
 	{
 		return m_socket.get_io_service();

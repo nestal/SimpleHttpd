@@ -15,7 +15,7 @@ int main()
 	{
 		boost::asio::streambuf buf;
 		std::ostream os{&buf};
-		os << conn->Request().Uri() << " not found!";
+		os << conn->URL() << " not found!";
 		
 		return http::Response{}.SetContent(buf);
 	});

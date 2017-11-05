@@ -26,6 +26,7 @@ namespace http {
 class Request;
 class Response;
 class HeaderList;
+class Method;
 
 class ContentHandler
 {
@@ -48,15 +49,9 @@ using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 class Connection
 {
 public:
-	/**
-	 * \brief Return the Request object of the request
-	 *
-	 * Use this function to get the request URI and the request body (e.g. POST
-	 * data) sent by the client.
-	 *
-	 * \return Request object of the request
-	 */
-	virtual const http::Request&  Request() = 0;
+	virtual std::string URL() const = 0;
+	virtual const HeaderList& Header() const = 0;
+	virtual http::Method Method() const = 0;
 
 	/// \brief Returns the io_service that runs the Server
 	///
