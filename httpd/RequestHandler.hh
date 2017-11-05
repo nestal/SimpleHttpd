@@ -24,6 +24,7 @@
 namespace http {
 
 using BrightFuture::future;
+using BrightFuture::promise;
 
 class Request;
 class Response;

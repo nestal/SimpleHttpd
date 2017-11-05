@@ -39,18 +39,60 @@ namespace http {
 class Server
 {
 private:
-	template <typename CallableReturnFutureToPromise>
-	struct Adaptor : public ContentHandler
+	template <typename CallableReturnFutureResponse>
+	struct AdaptFutureResponse : public ContentHandler
 	{
-		const CallableReturnFutureToPromise& m_callable;
+		const CallableReturnFutureResponse& m_callable;
 		ConnectionPtr   m_conn;
 		
-		Adaptor(const CallableReturnFutureToPromise& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
+		AdaptFutureResponse(const CallableReturnFutureResponse& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
 		
 		future<Response> OnContent(const char *, std::size_t) {return {};}
 		future<Response> Finish() {return m_callable(std::move(m_conn));}
 	};
 
+	template <typename CallableReturnFutureResponse>
+	typename std::enable_if<std::is_same<
+		typename std::result_of<CallableReturnFutureResponse(ConnectionPtr)>::type,
+		BrightFuture::future<Response>
+	>::value, RequestHandler>::type Adapt(CallableReturnFutureResponse&& handler)
+	{
+		return [handler=std::forward<CallableReturnFutureResponse>(handler)](const ConnectionPtr& conn)
+		{
+			return std::make_unique<AdaptFutureResponse<CallableReturnFutureResponse>>(handler, conn);
+		};
+	}
+	
+	template <typename CallableReturnResponse>
+	struct AdaptResponse : public ContentHandler
+	{
+		const CallableReturnResponse& m_callable;
+		ConnectionPtr   m_conn;
+		
+		AdaptResponse(const CallableReturnResponse& h, ConnectionPtr conn) : m_callable{h}, m_conn{std::move(conn)} {}
+		
+		future<Response> OnContent(const char *, std::size_t) {return {};}
+		future<Response> Finish()
+		{
+			promise<Response> p;
+			p.set_value(m_callable(std::move(m_conn)));
+			return p.get_future();
+		}
+	};
+
+	template <typename CallableReturnResponse>
+	typename std::enable_if<std::is_same<
+		typename std::result_of<CallableReturnResponse(ConnectionPtr)>::type,
+		Response
+	>::value, RequestHandler>::type Adapt(CallableReturnResponse&& handler)
+	{
+		return [handler=std::forward<CallableReturnResponse>(handler)](const ConnectionPtr& conn)
+		{
+			return std::make_unique<AdaptResponse<CallableReturnResponse>>(handler, conn);
+		};
+	}
+	
+	
 public:
 	Server() = delete;
 	Server(const Server&) = delete;
@@ -67,19 +109,13 @@ public:
 	template <typename Callable>
 	void AddHandler(const std::string& uri, Callable&& handler)
 	{
-		m_handlers.Add(uri, [handler=std::forward<Callable>(handler)](const ConnectionPtr& conn)
-		{
-			return std::make_unique<Adaptor>(handler, conn);
-		});
+		m_handlers.Add(uri, Adapt(std::forward<Callable>(handler)));
 	}
 	
 	template <typename Callable>
 	void SetDefaultHandler(Callable&& handler)
 	{
-		m_handlers.SetDefault([handler=std::forward<Callable>(handler)](const ConnectionPtr& conn)
-		{
-			return std::make_unique<Adaptor<Callable>>(handler, conn);
-		});
+		m_handlers.SetDefault(Adapt(std::forward<Callable>(handler)));
 	}
 	
 	boost::asio::io_service& IoService();

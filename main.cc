@@ -20,9 +20,10 @@ int main()
 		
 		rep.SetContent(buf);
 		
-		BrightFuture::promise<http::Response> promise;
+/*		BrightFuture::promise<http::Response> promise;
 		promise.set_value(std::move(rep));
-		return promise.get_future();
+		return promise.get_future();*/
+		return rep;
 	});
 /*	s.AddHandler("upload", [](auto&& conn)
 	{
