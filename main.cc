@@ -16,7 +16,7 @@ int main()
 		std::ostream os{&buf};
 		os << request.URL() << " not found!";
 		
-		return http::Response{}.SetContent(buf);
+		return http::Response{HTTP_STATUS_NOT_FOUND}.SetContent(buf);
 	});
 	
 	class EchoContent : public http::ContentHandler
@@ -41,6 +41,18 @@ int main()
 		boost::asio::streambuf m_buf;
 	};
 	s.AddHandler("echo", [](auto&&){return std::make_unique<EchoContent>();});
+	
+	s.AddHandler("promise", [](auto&& request)
+	{
+		boost::asio::streambuf buf;
+		std::ostream os{&buf};
+		os << request.URL() << " is requested!";
+		
+		BrightFuture::promise<http::Response> promise;
+		promise.set_value(http::Response{}.SetContent(buf));
+		return promise.get_future();
+	});
+	
 	ios.run();
 	return 0;
 }
