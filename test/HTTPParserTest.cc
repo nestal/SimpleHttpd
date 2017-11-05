@@ -10,19 +10,52 @@
 // Created by nestal on 11/3/17.
 //
 
-#include <iostream>
 #include "http-parser/http_parser.h"
 #include "httpd/HTTPParser.hh"
+#include "httpd/RequestHandler.hh"
+#include "httpd/HeaderList.hh"
 
 #include "BrightFuture/test/catch.hpp"
 
+#include <iostream>
+
 using namespace http;
+
+struct MockRequest : RequestCallback
+{
+	Method method;
+	std::string url;
+	HeaderList header;
+	std::string content;
+	
+	void OnMessageStart(http::Method met, std::string&& u, int, int) override
+	{
+		method = met;
+		url = std::move(u);
+	}
+	void OnHeader(std::string&& field, std::string&& value) override
+	{
+		header.Add({std::move(field), std::move(value)});
+	}
+	int OnHeaderComplete() override
+	{
+		return 0;
+	}
+	int OnContent(const char *data, std::size_t size) override
+	{
+		content.append(data, size);
+		return 0;
+	}
+	int OnMessageEnd() override
+	{
+		return 0;
+	}
+};
 
 TEST_CASE("HTTPParser GET simple request", "[normal]")
 {
-	Request result;
-	HTTPParser subject;
-	subject.SetCallback(result);
+	MockRequest result;
+	HTTPParser subject{result};
 	const char request[] = "GET /some/path/to/url HTTP/1.1\r\n"
 		"Host: localhost:8080\r\n"
 		"User-Agent: curl/7.53.1\r\n"
@@ -37,10 +70,10 @@ TEST_CASE("HTTPParser GET simple request", "[normal]")
 		CHECK(subject.CurrentProgress() == HTTPParser::Progress::finished);
 		CHECK(subject.Result() == HPE_OK);
 		
-		CHECK(result.Uri() == "/some/path/to/url");
-		CHECK(result.Method() == HTTP_GET);
-		CHECK(result.Headers().Count() == 3);
-		CHECK(result.Headers().Field("Host") == "localhost:8080");
+		CHECK(result.url == "/some/path/to/url");
+		CHECK(result.method == HTTP_GET);
+		CHECK(result.header.Count() == 3);
+		CHECK(result.header.Field("Host") == "localhost:8080");
 	}
 	SECTION("two pass")
 	{
@@ -54,8 +87,8 @@ TEST_CASE("HTTPParser GET simple request", "[normal]")
 		CHECK(r2 == size-r);
 		CHECK(subject.Result() == HPE_OK);
 		
-		CHECK(result.Method() == HTTP_GET);
-		CHECK(result.Headers().Count() == 3);
+		CHECK(result.method == HTTP_GET);
+		CHECK(result.header.Count() == 3);
 	}
 }
 
@@ -73,14 +106,14 @@ TEST_CASE("HTTPParser POST request content", "[normal]")
 	;
 	const auto size = sizeof(request)-1;
 
-	Request result;
-	HTTPParser subject;
-	subject.SetCallback(result);
+	MockRequest result;
+	HTTPParser subject{result};
+	
 	auto r = subject.Parse(request, size);
 	CHECK(r == size);
 	CHECK(subject.CurrentProgress() == HTTPParser::Progress::finished);
 	CHECK(subject.Result() == HPE_OK);
 	
-	CHECK(result.Method() == HTTP_POST);
-	CHECK(result.Content() == "hello=world!");
+	CHECK(result.method == HTTP_POST);
+	CHECK(result.content == "hello=world!");
 }

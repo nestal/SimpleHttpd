@@ -17,7 +17,7 @@
 
 namespace http {
 
-HTTPParser::HTTPParser()
+HTTPParser::HTTPParser(RequestCallback& callback) : m_output{callback}
 {
 	::http_parser_settings_init(&m_setting);
 	m_setting.on_message_begin = [](http_parser*)
@@ -48,29 +48,20 @@ HTTPParser::HTTPParser()
 		auto pthis = reinterpret_cast<HTTPParser*>(p->data);
 		assert(pthis);
 		pthis->AddHeader();
-		int ret = 0;
-		if (pthis->m_output)
-			ret = pthis->m_output->OnHeaderComplete();
 		pthis->m_progress = Progress::content;
-		return ret;
+		return pthis->m_output.OnHeaderComplete();
 	};
 	m_setting.on_body = [](http_parser* p, const char *data, size_t size)
 	{
 		auto pthis = reinterpret_cast<HTTPParser *>(p->data);
 		assert(pthis);
-		int ret = 0;
-		if (pthis->m_output)
-			ret = pthis->m_output->OnContent(data, size);
-		return ret;
+		return pthis->m_output.OnContent(data, size);
 	};
 	m_setting.on_message_complete = [](http_parser *p)
 	{
 		auto pthis = reinterpret_cast<HTTPParser *>(p->data);
 		pthis->m_progress = Progress::finished;
-		int ret = 0 ;
-		if (pthis->m_output)
-			ret = pthis->m_output->OnMessageEnd();
-		return ret;
+		return pthis->m_output.OnMessageEnd();
 	};
 	
 	m_parser.data = this;
@@ -88,13 +79,12 @@ int HTTPParser::OnHeaderField(const char *data, std::size_t size)
 	{
 	case HeaderState::none:
 		m_progress = Progress::header;
-		if (m_output)
-			m_output->OnMessageStart(
-				static_cast<http_method >(m_parser.method),
-				std::move(m_url),
-				m_parser.http_major,
-				m_parser.http_minor
-			);
+		m_output.OnMessageStart(
+			static_cast<http_method >(m_parser.method),
+			std::move(m_url),
+			m_parser.http_major,
+			m_parser.http_minor
+		);
 		break;
 	
 	case HeaderState::value:
@@ -118,8 +108,7 @@ int HTTPParser::OnHeaderValue(const char *data, std::size_t size)
 
 void HTTPParser::AddHeader()
 {
-	if (m_output)
-		m_output->OnHeader(std::move(m_header_field), std::move(m_header_value));
+	m_output.OnHeader(std::move(m_header_field), std::move(m_header_value));
 	m_header_field.clear();
 	m_header_value.clear();
 }
@@ -132,11 +121,6 @@ http_errno HTTPParser::Result() const
 HTTPParser::Progress HTTPParser::CurrentProgress() const
 {
 	return m_progress;
-}
-
-void HTTPParser::SetCallback(RequestCallback& callback)
-{
-	m_output = &callback;
 }
 
 std::ostream& operator<<(std::ostream& os, HTTPParser::Progress p)

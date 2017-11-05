@@ -12,12 +12,24 @@
 
 #pragma once
 
-#include "RequestCallback.hh"
+#include "Enum.hh"
 #include "http-parser/http_parser.h"
 
 #include <iosfwd>
 
 namespace http {
+
+class RequestCallback
+{
+public:
+	virtual ~RequestCallback() = default;
+	
+	virtual void OnMessageStart(http::Method method, std::string&& url, int major, int minor) = 0;
+	virtual void OnHeader(std::string&& field, std::string&& value) = 0;
+	virtual int OnHeaderComplete() = 0;
+	virtual int OnContent(const char *data, std::size_t size) = 0;
+	virtual int OnMessageEnd() = 0;
+};
 
 class HTTPParser
 {
@@ -25,13 +37,11 @@ public:
 	enum class Progress {start, header, content, finished};
 	
 public:
-	HTTPParser();
+	explicit HTTPParser(RequestCallback& callback);
 	HTTPParser(HTTPParser&&) = delete;
 	HTTPParser(const HTTPParser&) = delete;
 	HTTPParser& operator=(HTTPParser&&) = delete;
 	HTTPParser& operator=(const HTTPParser&) = delete;
-	
-	void SetCallback(RequestCallback& callback);
 	
 	std::size_t Parse(const char *data, std::size_t size);
 	
@@ -52,7 +62,7 @@ private:
 	enum class HeaderState {field, value, none};
 	HeaderState m_header_state{HeaderState::none};
 	
-	RequestCallback*    m_output{};
+	RequestCallback&    m_output;
 	Progress            m_progress{Progress::start};
 	
 	::http_parser_settings  m_setting{};

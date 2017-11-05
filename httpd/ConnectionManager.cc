@@ -15,7 +15,6 @@
 
 #include "RequestDispatcher.hh"
 
-#include "RequestCallback.hh"
 #include "HTTPParser.hh"
 #include "Response.hh"
 #include "HeaderList.hh"
@@ -43,7 +42,6 @@ public:
 		m_parent{parent},
 		m_handler{handler}
 	{
-		m_parser.SetCallback(*this);
 	}
 	
 	// RequestCallback overrides
@@ -171,7 +169,7 @@ private:
 	HeaderList      m_headers;
 
 	ConnectionManager&  m_parent;
-	HTTPParser          m_parser;
+	HTTPParser          m_parser{*this};
 	const RequestDispatcher& m_handler;
 	
 	std::unique_ptr<ContentHandler> m_content_handler;

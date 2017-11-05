@@ -12,7 +12,6 @@
 
 #include "RequestDispatcher.hh"
 
-#include "RequestCallback.hh"
 #include "Response.hh"
 #include "UriString.hh"
 
