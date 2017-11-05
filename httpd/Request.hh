@@ -12,11 +12,7 @@
 
 #pragma once
 
-#include "HeaderList.hh"
-#include "UriString.hh"
 #include "Enum.hh"
-
-#include <boost/asio/ip/tcp.hpp>
 
 #include <string>
 
@@ -32,40 +28,6 @@ public:
 	virtual int OnHeaderComplete() = 0;
 	virtual int OnContent(const char *data, std::size_t size) = 0;
 	virtual int OnMessageEnd() = 0;
-};
-
-/**
- * \brief   HTTP Request
- */
-class Request : public RequestCallback
-{
-public:
-	Request() = default;
-
-	void OnMessageStart(http::Method method, std::string&& url, int major, int minor) override;
-	void OnHeader(std::string&& field, std::string&& value) override;
-	int OnHeaderComplete() override;
-	int OnContent(const char *data, std::size_t size) override;
-	int OnMessageEnd() override;
-	
-	http::Method Method() const;
-	int MajorVersion() const;
-	int MinorVersion() const;
-	const UriString& Uri() const;
-
-	const HeaderList& Headers() const;
-	const std::string& Content() const;
-	
-private:
-	http::Method m_method;
-	UriString   m_uri;
-	
-	int m_major = 0;
-	int m_minor = 0;
-
-	HeaderList m_headers;
-
-	std::string m_content;
 };
 
 } // end of namespace

@@ -12,6 +12,9 @@
 
 #include "HTTPParser.hh"
 
+#include <cassert>
+#include <ostream>
+
 namespace http {
 
 HTTPParser::HTTPParser()

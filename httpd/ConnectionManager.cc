@@ -18,6 +18,7 @@
 #include "Request.hh"
 #include "HTTPParser.hh"
 #include "Response.hh"
+#include "HeaderList.hh"
 
 #include "executor/BoostAsioExecutor.hh"
 
@@ -46,13 +47,14 @@ public:
 	}
 	
 	// RequestCallback overrides
-	void OnMessageStart(http::Method method, std::string&& url, int major, int minor) override
+	void OnMessageStart(http::Method method, std::string&& url, int, int) override
 	{
-		m_req.OnMessageStart(method, std::move(url), major, minor);
+		m_method = method;
+		m_uri    = std::move(url);
 	}
 	void OnHeader(std::string&& field, std::string&& value) override
 	{
-		m_req.OnHeader(std::move(field), std::move(value));
+		m_headers.Add({std::move(field), std::move(value)});
 	}
 	int OnHeaderComplete() override
 	{
@@ -132,17 +134,17 @@ public:
 	
 	std::string URL() const override
 	{
-		return m_req.Uri().Str();
+		return m_uri;
 	}
 	
 	const HeaderList& Header() const override
 	{
-		return m_req.Headers();
+		return m_headers;
 	}
 	
 	http::Method Method() const override
 	{
-		return m_req.Method();
+		return m_method;
 	}
 	
 	io_service& IoService() override
@@ -163,9 +165,12 @@ public:
 private:
 	boost::asio::ip::tcp::socket m_socket;
 	std::array<char, 1024> m_read_buffer;
-	
+
+	http::Method    m_method;
+	std::string     m_uri;
+	HeaderList      m_headers;
+
 	ConnectionManager&  m_parent;
-	http::Request       m_req;
 	HTTPParser          m_parser;
 	const RequestDispatcher& m_handler;
 	
