@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include "BrightFuture.hh"
 #include <boost/asio.hpp>
 
 #include <unordered_set>

@@ -32,9 +32,7 @@ int main()
 			http::Response rep{HTTP_STATUS_OK};
 			rep.SetContent(m_buf);
 			
-			BrightFuture::promise<http::Response> promise;
-			promise.set_value(std::move(rep));
-			return promise.get_future();
+			return BrightFuture::make_ready_future(std::move(rep));
 		}
 		
 	private:
@@ -48,9 +46,7 @@ int main()
 		std::ostream os{&buf};
 		os << request.URL() << " is requested!";
 		
-		BrightFuture::promise<http::Response> promise;
-		promise.set_value(http::Response{}.SetContent(buf));
-		return promise.get_future();
+		return BrightFuture::make_ready_future(std::move(http::Response{}.SetContent(buf)));
 	});
 	
 	ios.run();

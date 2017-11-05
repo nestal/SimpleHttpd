@@ -52,9 +52,7 @@ private:
 		future<Response>
 	>::type	DoFinish()
 	{
-		promise<Response> p;
-		p.set_value(m_callable(std::move(m_conn)));
-		return p.get_future();
+		return BrightFuture::make_ready_future(m_callable(std::move(m_conn)));
 	}
 	
 private:
