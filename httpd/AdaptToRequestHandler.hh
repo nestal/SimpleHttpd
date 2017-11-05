@@ -18,10 +18,10 @@
 namespace http {
 
 template <typename Callable>
-class AdaptFutureResponse : public ContentHandler
+class AdaptCallableToContentHandler : public ContentHandler
 {
 public:
-	AdaptFutureResponse(const Callable& h, Request& conn) : m_callable{h}, m_conn{conn} {}
+	AdaptCallableToContentHandler(const Callable& h, Request& conn) : m_callable{h}, m_conn{conn} {}
 	
 	future<Response> OnContent(const char *, std::size_t) override {return {};}
 	future<Response> Finish() override {return DoFinish();}
@@ -36,7 +36,10 @@ private:
 			future<Response>
 		>::value,
 		future<Response>
-	>::type DoFinish() {return m_callable(std::move(m_conn));}
+	>::type DoFinish()
+	{
+		return m_callable(std::move(m_conn));
+	}
 	
 	// This overload of DoFinish() will only be enabled if the return value of the "Callable"
 	// functor is a Response.
@@ -70,7 +73,7 @@ typename std::enable_if<
 {
 	return [handler=std::forward<Callable>(handler)](Request& conn)
 	{
-		return std::make_unique<AdaptFutureResponse<Callable>>(handler, conn);
+		return std::make_unique<AdaptCallableToContentHandler<Callable>>(handler, conn);
 	};
 }
 
