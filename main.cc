@@ -24,6 +24,20 @@ int main()
 		promise.set_value(std::move(rep));
 		return promise.get_future();
 	});
+/*	s.AddHandler("upload", [](auto&& conn)
+	{
+		class SaveContent : public http::ContentHandler
+		{
+		public:
+			void OnContent(const char *data, std::size_t size) ;
+			virtual void Finish() = 0;
+	
+			virtual BrightFuture::future<http::Response> Response() = 0;
+		private:
+		boost::asio::streambuf buf;
+		std::ostream os{&buf};
+		};
+	});*/
 
 	ios.run();
 	return 0;

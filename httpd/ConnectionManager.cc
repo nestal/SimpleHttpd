@@ -50,11 +50,7 @@ public:
 	}
 	void OnHeaderComplete() override
 	{
-		auto self = shared_from_this();
-		m_handler.HandleRequest(self).then([this, self](auto fut_reply)
-		{
-			Reply(fut_reply.get());
-		}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
+		m_response = m_handler.HandleRequest(shared_from_this());
 	}
 	
 	void OnContent(const char *data, std::size_t size) override
@@ -66,10 +62,18 @@ public:
 	{
 		if (m_content)
 			m_content->Finish();
+		
+		assert(m_response.valid());
+		m_response.then([this, self=shared_from_this()](auto fut_reply)
+		{
+			Reply(fut_reply.get());
+		}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
 	}
-	void HandleContent(std::unique_ptr<ContentHandler> handler) override
+	BrightFuture::future<http::Response> HandleContent(std::unique_ptr<ContentHandler> handler) override
 	{
+		assert(handler);
 		m_content = std::move(handler);
+		return m_content->Response();
 	}
 	
 	void Read();
@@ -101,7 +105,9 @@ private:
 	http::Request       m_req;
 	HTTPParser          m_parser;
 	const RequestDispatcher& m_handler;
+	
 	std::unique_ptr<ContentHandler> m_content;
+	future<http::Response> m_response;
 };
 
 ConnectionManager::Entry::Entry(
@@ -133,16 +139,13 @@ void ConnectionManager::Entry::Read()
 
 void ConnectionManager::Entry::OnRead(std::size_t count)
 {
-	try
-	{
-		m_parser.Parse(m_read_buffer.begin(), count);
-		if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
-			Read();
-	}
-	catch (std::exception& e)
-	{
+	m_parser.Parse(m_read_buffer.begin(), count);
+	
+	if (m_parser.Result() != HPE_OK)
 		Reply({ResponseStatus::bad_request});
-	}
+	
+	else if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
+		Read();
 }
 
 void ConnectionManager::Entry::Reply(const Response& rep)

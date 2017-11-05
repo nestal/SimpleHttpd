@@ -61,6 +61,8 @@ HTTPParser::HTTPParser()
 	{
 		auto pthis = reinterpret_cast<HTTPParser *>(p->data);
 		pthis->m_progress = Progress::finished;
+		if (pthis->m_output)
+			pthis->m_output->OnMessageEnd();
 		return 0;
 	};
 	
