@@ -25,13 +25,18 @@ public:
 	enum class Progress {start, header, content, finished};
 	
 public:
-	explicit HttpParser(RequestCallback& output);
+	HttpParser();
 	HttpParser(HttpParser&&) = delete;
 	HttpParser(const HttpParser&) = delete;
 	HttpParser& operator=(HttpParser&&) = delete;
 	HttpParser& operator=(const HttpParser&) = delete;
 	
+	void SetCallback(RequestCallback& callback);
+	
 	std::size_t Parse(const char *data, std::size_t size);
+	
+	std::string URL() const;
+	http_method Method() const;
 	
 	http_errno Result() const;
 	Progress CurrentProgress() const;
@@ -50,7 +55,7 @@ private:
 	enum class HeaderState {field, value, none};
 	HeaderState m_header_state{HeaderState::none};
 	
-	RequestCallback&    m_output;
+	RequestCallback*    m_output{};
 	Progress            m_progress{Progress::start};
 	
 	::http_parser_settings  m_setting{};

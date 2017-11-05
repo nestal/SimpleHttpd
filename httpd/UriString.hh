@@ -40,7 +40,7 @@ public:
 	}
 
 	template <std::size_t n>
-	UriString(const char (&str)[n]) : m_uri{str, n}
+	UriString(const char (&str)[n]) : m_uri{str}
 	{
 	}
 	

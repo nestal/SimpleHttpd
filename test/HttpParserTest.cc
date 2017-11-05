@@ -21,7 +21,8 @@ using namespace http;
 TEST_CASE("HttpParser GET simple request", "[normal]")
 {
 	Request result;
-	HttpParser subject{result};
+	HttpParser subject;
+	subject.SetCallback(result);
 	const char request[] = "GET /some/path/to/url HTTP/1.1\r\n"
 		"Host: localhost:8080\r\n"
 		"User-Agent: curl/7.53.1\r\n"
@@ -73,7 +74,8 @@ TEST_CASE("HttpParser POST request content", "[normal]")
 	const auto size = sizeof(request)-1;
 
 	Request result;
-	HttpParser subject{result};
+	HttpParser subject;
+	subject.SetCallback(result);
 	auto r = subject.Parse(request, size);
 	CHECK(r == size);
 	CHECK(subject.CurrentProgress() == HttpParser::Progress::finished);

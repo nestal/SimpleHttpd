@@ -62,7 +62,7 @@ private:
 	
 	ConnectionManager&  m_parent;
 	http::Request       m_req;
-	HttpParser          m_parser{m_req};
+	HttpParser          m_parser;
 	const RequestDispatcher& m_handler;
 };
 
@@ -75,6 +75,7 @@ ConnectionManager::Entry::Entry(
 	m_parent{parent},
 	m_handler{handler}
 {
+	m_parser.SetCallback(m_req);
 }
 
 void ConnectionManager::Entry::Read()
