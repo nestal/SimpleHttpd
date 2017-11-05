@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "BrightFuture.hh"
+#include "Future.hh"
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -22,9 +22,6 @@
 #include <cstdint>
 
 namespace http {
-
-using BrightFuture::future;
-using BrightFuture::promise;
 
 class Request;
 class Response;

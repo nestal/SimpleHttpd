@@ -2,6 +2,7 @@
 
 #include "httpd/Server.hh"
 #include "httpd/Response.hh"
+#include "httpd/Request.hh"
 
 int main()
 {
@@ -10,11 +11,11 @@ int main()
 	boost::asio::io_service ios;
 
 	http::Server s{ios, "0.0.0.0", "8080"};
-	s.SetDefaultHandler([](auto&&)
+	s.SetDefaultHandler([](auto&& conn)
 	{
 		boost::asio::streambuf buf;
 		std::ostream os{&buf};
-		os << "hello promise!";
+		os << conn->Request().Uri() << " not found!";
 		
 		return http::Response{}.SetContent(buf);
 	});
@@ -27,7 +28,7 @@ int main()
 			m_buf.sputn(data, size);
 			return {};
 		}
-		virtual BrightFuture::future<http::Response> Finish() override
+		BrightFuture::future<http::Response> Finish() override
 		{
 			http::Response rep{HTTP_STATUS_OK};
 			rep.SetContent(m_buf);

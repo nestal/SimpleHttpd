@@ -13,12 +13,12 @@
 #include "Response.hh"
 
 #include <unordered_map>
+#include <iostream>
 
 namespace {
 
 const char name_value_separator[] = {':', ' '};
 const char crlf[] = {'\r', '\n'};
-const char content_length[] = "Content-Length: ";
 
 const std::string& StatusString(http_status status)
 {
@@ -48,6 +48,8 @@ Response::Response(http_status s) : m_status{s}
 
 std::vector<const_buffer> Response::ToBuffers() const
 {
+	static const std::string content_length = "Content-Length: ";
+	
 	return {
 		buffer(StatusString(m_status)),
 		buffer(m_content_type),
@@ -97,8 +99,9 @@ Response& Response::SetContent(const boost::asio::streambuf& buf)
 BrightFuture::future<boost::system::error_code> Response::Send(ip::tcp::socket& sock) const
 {
 	auto promise = std::make_shared<BrightFuture::promise<boost::system::error_code>>();
-	async_write(sock, ToBuffers(), [promise](boost::system::error_code ec, std::size_t)
+	async_write(sock, ToBuffers(), [promise](boost::system::error_code ec, std::size_t count)
 	{
+		std::cout << "on sent(): " << ec << " " << count << " bytes" << std::endl;
 		promise->set_value(ec);
 	});
 	return promise->get_future();

@@ -38,7 +38,12 @@ public:
 		boost::asio::ip::tcp::socket&&  sock,
 		const RequestDispatcher&        handler,
 		ConnectionManager&              parent
-	);
+	) : m_socket{std::move(sock)},
+		m_parent{parent},
+		m_handler{handler}
+	{
+		m_parser.SetCallback(*this);
+	}
 	
 	// RequestCallback overrides
 	void OnMessageStart(http::Method method, std::string&& url, int major, int minor) override
@@ -52,7 +57,15 @@ public:
 	int OnHeaderComplete() override
 	{
 		m_content_handler = m_handler.HandleRequest(shared_from_this());
-		return 0;
+		if (!m_content_handler)
+		{
+			DoReply({HTTP_STATUS_BAD_REQUEST});
+			return -1;
+		}
+		else
+		{
+			return 0;
+		}
 	}
 	
 	int OnContent(const char *data, std::size_t size) override
@@ -82,15 +95,39 @@ public:
 	
 	void Read();
 	void Stop();
-	void OnRead(std::size_t count);
-	void Reply(const Response& rep);
+	void OnRead(std::size_t count)
+	{
+		m_parser.Parse(m_read_buffer.begin(), count);
+		if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
+			Read();
+	}
+	
 	void TryReply(future<Response> response)
 	{
 		assert(response.valid());
-		response.then([this, self = shared_from_this()](auto fut_reply)
+		response.then([this, self=shared_from_this()](auto fut_reponse)
 		{
-			Reply(fut_reply.get());
-		}, use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service()));
+			DoReply(fut_reponse.get());
+		}, use_service<Executor>(IoService()));
+	}
+	
+	void DoReply(Response response)
+	{
+		response.Send(m_socket).then([this, self=shared_from_this()](auto fut_ec)
+		{
+			auto ec = fut_ec.get();
+			if (!ec)
+			{
+				std::cout << "finished connection" << std::endl;
+				
+				// Initiate graceful connection closure.
+				boost::system::error_code ignored_ec;
+				m_socket.shutdown(ip::tcp::socket::shutdown_both, ignored_ec);
+			}
+			
+			if (ec != boost::asio::error::operation_aborted)
+				m_parent.Stop(shared_from_this());
+		}, use_service<Executor>(IoService()));
 	}
 	
 	const http::Request&  Request() override {return m_req;}
@@ -121,18 +158,6 @@ private:
 	std::unique_ptr<ContentHandler> m_content_handler;
 };
 
-ConnectionManager::Entry::Entry(
-	ip::tcp::socket&&         sock,
-	const RequestDispatcher&  handler,
-	ConnectionManager&        parent
-) :
-	m_socket{std::move(sock)},
-	m_parent{parent},
-	m_handler{handler}
-{
-	m_parser.SetCallback(*this);
-}
-
 void ConnectionManager::Entry::Read()
 {
 	m_socket.async_read_some(
@@ -146,30 +171,6 @@ void ConnectionManager::Entry::Read()
 				m_parent.Stop(shared_from_this());
 		}
 	);
-}
-
-void ConnectionManager::Entry::OnRead(std::size_t count)
-{
-	m_parser.Parse(m_read_buffer.begin(), count);
-	if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
-		Read();
-}
-
-void ConnectionManager::Entry::Reply(const Response& rep)
-{
-	rep.Send(m_socket).then([this, self=shared_from_this()](auto&& fut_ec)
-	{
-		auto ec = fut_ec.get();
-		if (!ec)
-		{
-			// Initiate graceful connection closure.
-			boost::system::error_code ignored_ec;
-			m_socket.shutdown(ip::tcp::socket::shutdown_both, ignored_ec);
-		}
-		
-		if (ec != boost::asio::error::operation_aborted)
-			m_parent.Stop(shared_from_this());
-	});
 }
 
 void ConnectionManager::Entry::Stop()
