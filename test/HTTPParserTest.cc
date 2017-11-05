@@ -81,6 +81,6 @@ TEST_CASE("HTTPParser POST request content", "[normal]")
 	CHECK(subject.CurrentProgress() == HTTPParser::Progress::finished);
 	CHECK(subject.Result() == HPE_OK);
 	
-	CHECK(result.Method() == HTTP_GET);
+	CHECK(result.Method() == HTTP_POST);
 	CHECK(result.Content() == "hello=world!");
 }

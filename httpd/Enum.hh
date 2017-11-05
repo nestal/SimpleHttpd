@@ -13,6 +13,7 @@
 #pragma once
 
 #include <string>
+#include <iosfwd>
 
 namespace http {
 
@@ -29,9 +30,12 @@ public:
 	friend bool operator<=(const Method& lhs, const Method& rhs) {return lhs.m_parser_enum <= rhs.m_parser_enum;}
 	
 	std::string Str() const;
+	int Get() const {return m_parser_enum;}
 	
 private:
 	int m_parser_enum;
 };
+
+std::ostream& operator<<(std::ostream& os, Method method);
 
 } // end of namespace

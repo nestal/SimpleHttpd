@@ -27,7 +27,10 @@ namespace http {
 
 using namespace boost::asio;
 
-class ConnectionManager::Entry : public Connection, public std::enable_shared_from_this<Entry>
+class ConnectionManager::Entry :
+	public Connection,
+	public RequestCallback,
+	public std::enable_shared_from_this<Entry>
 {
 public:
 	Entry(
@@ -36,8 +39,27 @@ public:
 		ConnectionManager&              parent
 	);
 	
+	// RequestCallback overrides
+	void OnMessageStart(http::Method method, std::string&& url, int major, int minor) override
+	{
+		m_req.OnMessageStart(method, std::move(url), major, minor);
+	}
+	void OnHeader(std::string&& field, std::string&& value) override
+	{
+		m_req.OnHeader(std::move(field), std::move(value));
+	}
+	void OnHeaderComplete() override {}
+	void OnContent(const char *data, std::size_t size) override
+	{
+	
+	}
+	void OnMessageEnd() override
+	{
+	}
+	
 	void Read();
 	void Stop();
+	void OnRead(std::size_t count);
 	
 	const http::Request&  Request() override {return m_req;}
 	void Reply(const Response& rep);
@@ -75,39 +97,44 @@ ConnectionManager::Entry::Entry(
 	m_parent{parent},
 	m_handler{handler}
 {
-	m_parser.SetCallback(m_req);
+	m_parser.SetCallback(*this);
 }
 
 void ConnectionManager::Entry::Read()
 {
-	auto& exec = use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service());
-	m_socket.async_read_some(buffer(m_read_buffer),
-		[this, &exec, self=shared_from_this()](boost::system::error_code error, std::size_t count)
+	m_socket.async_read_some(
+		buffer(m_read_buffer),
+		[this, self=shared_from_this()](auto error_code, std::size_t count)
 		{
-			if (!error)
-			{
-				m_parser.Parse(m_read_buffer.begin(), count);
-				if (m_parser.CurrentProgress() == HTTPParser::Progress::finished)
-				{
-					if (m_parser.Result() == HPE_OK)
-					{
-						m_handler.HandleRequest(self).then([this, self](auto fut_reply)
-						{
-							Reply(fut_reply.get());
-						}, exec);
-					}
-					else
-					Reply({ResponseStatus::bad_request});
-				}
-				else
-					Read();
-			}
+			if (!error_code)
+				OnRead(count);
 
-			else if (error != boost::asio::error::operation_aborted)
+			else if (error_code != boost::asio::error::operation_aborted)
 				m_parent.Stop(shared_from_this());
-		});
+		}
+	);
 }
 
+void ConnectionManager::Entry::OnRead(std::size_t count)
+{
+	m_parser.Parse(m_read_buffer.begin(), count);
+	if (m_parser.CurrentProgress() == HTTPParser::Progress::finished)
+	{
+		if (m_parser.Result() == HPE_OK)
+		{
+			auto& exec = use_service<BrightFuture::BoostAsioExecutor>(m_socket.get_io_service());
+			auto self = shared_from_this();
+			m_handler.HandleRequest(self).then([this, self](auto fut_reply)
+			{
+				Reply(fut_reply.get());
+			}, exec);
+		}
+		else
+			Reply({ResponseStatus::bad_request});
+	}
+	else
+		Read();
+}
 
 void ConnectionManager::Entry::Reply(const Response& rep)
 {

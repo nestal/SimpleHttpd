@@ -21,4 +21,9 @@ std::string Method::Str() const
 	return http_method_str(static_cast<http_method>(m_parser_enum));
 }
 
+std::ostream& operator<<(std::ostream& os, Method method)
+{
+	return os << method.Str();
+}
+
 } // end of namespace
