@@ -60,25 +60,43 @@ std::vector<const_buffer> Response::ToBuffers() const
 	};
 }
 
-Response& Response::SetStatus(http_status status)
+Response& Response::SetStatus(http_status status) &
 {
 	m_status = status;
 	return *this;
 }
 
-Response& Response::SetContentType(const std::string& type)
+Response&& Response::SetStatus(http_status status)&&
+{
+	m_status = status;
+	return std::move(*this);
+}
+
+Response& Response::SetContentType(const std::string& type) &
 {
 	m_content_type = "Content-Type: " + type + "\r\n";
 	return *this;
 }
 
-Response& Response::AddHeader(const std::string& header, const std::string& value)
+Response&& Response::SetContentType(const std::string& type) &&
+{
+	m_content_type = "Content-Type: " + type + "\r\n";
+	return std::move(*this);
+}
+
+Response& Response::AddHeader(const std::string& header, const std::string& value) &
 {
 	m_other_headers += (header + ": " + value + "\r\n");
 	return *this;
 }
 
-Response& Response::SetContent(std::vector<char>&& buf)
+Response&& Response::AddHeader(const std::string& header, const std::string& value) &&
+{
+	m_other_headers += (header + ": " + value + "\r\n");
+	return std::move(*this);
+}
+
+Response& Response::SetContent(std::vector<char>&& buf) &
 {
 	m_content = std::move(buf);
 	
@@ -88,12 +106,30 @@ Response& Response::SetContent(std::vector<char>&& buf)
 	return *this;
 }
 
-Response& Response::SetContent(const boost::asio::streambuf& buf)
+Response&& Response::SetContent(std::vector<char>&& buf) &&
+{
+	m_content = std::move(buf);
+	
+	// construct Content-Length header with the actual length of content
+	m_content_length = std::to_string(m_content.size());
+	
+	return std::move(*this);
+}
+
+Response& Response::SetContent(const boost::asio::streambuf& buf) &
 {
 	std::vector<char> content(buf.size());
 	buffer_copy(boost::asio::buffer(content), buf.data());
 	
 	return SetContent(std::move(content));
+}
+
+Response&& Response::SetContent(const boost::asio::streambuf& buf) &&
+{
+	std::vector<char> content(buf.size());
+	buffer_copy(boost::asio::buffer(content), buf.data());
+	
+	return std::move(SetContent(std::move(content)));
 }
 
 BrightFuture::future<boost::system::error_code> Response::Send(ip::tcp::socket& sock) const

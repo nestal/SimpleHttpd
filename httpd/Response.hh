@@ -37,12 +37,17 @@ public:
 	Response(Response&&) = default;
 	Response& operator=(Response&&) = default;
 	
-	Response& SetStatus(http_status status);
-	Response& SetContentType(const std::string& type);
-	Response& AddHeader(const std::string& header, const std::string& value);
+	Response& SetStatus(http_status status) &;
+	Response&& SetStatus(http_status status) &&;
+	Response& SetContentType(const std::string& type) &;
+	Response&& SetContentType(const std::string& type) &&;
+	Response& AddHeader(const std::string& header, const std::string& value) &;
+	Response&& AddHeader(const std::string& header, const std::string& value) &&;
 
-	Response& SetContent(std::vector<char>&& buf);
-	Response& SetContent(const boost::asio::streambuf& buf);
+	Response& SetContent(std::vector<char>&& buf) &;
+	Response& SetContent(const boost::asio::streambuf& buf) &;
+	Response&& SetContent(std::vector<char>&& buf) &&;
+	Response&& SetContent(const boost::asio::streambuf& buf) &&;
 	
 	BrightFuture::future<boost::system::error_code> Send(boost::asio::ip::tcp::socket& sock) const;
 

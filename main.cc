@@ -46,7 +46,7 @@ int main()
 		std::ostream os{&buf};
 		os << request.URL() << " is requested!";
 		
-		return BrightFuture::make_ready_future(std::move(http::Response{}.SetContent(buf).SetContentType("text/plain")));
+		return BrightFuture::make_ready_future(http::Response{}.SetContent(buf).SetContentType("text/plain"));
 	});
 	s.AddHandler("bad", HTTP_STATUS_BAD_REQUEST);
 	
