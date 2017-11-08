@@ -9,6 +9,7 @@ endif()
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Doxygen)
 
 include_directories(
     ${Boost_INCLUDE_DIR}
@@ -27,7 +28,6 @@ target_link_libraries(httpdlib
 	Boost::disable_autolinking
 	Boost::system
 	Boost::filesystem
-    ${Boost_LIBRARIES}
 )
 
 set(SOURCE_FILES main.cc)
@@ -39,3 +39,13 @@ add_executable(httpd_test ${HTTP_UT_FILES})
 target_link_libraries(httpd_test httpdlib)
 
 add_subdirectory(BrightFuture)
+
+# documentations
+if (DOXYGEN_FOUND)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+	add_custom_target(${PROJECT_NAME}-doc
+		${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		COMMENT "Generating API documentation with Doxygen" VERBATIM
+	)
+endif()

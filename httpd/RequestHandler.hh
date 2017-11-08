@@ -34,15 +34,15 @@ public:
 };
 using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
-/**
- * \brief Represents the information required to handle an HTTP request
- *
- * The purpose of the Connection is to provide enough information for
- * the ::RequestHandler to handle a request. These information include
- * the HTTP request itself, i.e. the request headers and content, represented
- * by the Request class. It also include the response builder: the Response
- * class.
- */
+///
+/// Represents the information required to handle an HTTP request
+///
+/// The purpose of this class is to provide enough information for
+/// the RequestHandler to handle a request. These information include
+/// the HTTP request itself, i.e. the request headers and content, represented
+/// by the Request class. It also include the response builder: the Response
+/// class.
+///
 class Request
 {
 public:
@@ -66,30 +66,45 @@ public:
 	virtual http::Executor& Executor() = 0;
 };
 
-/**
- * \brief A function that handles HTTP requests.
- *
- * The RequestHandler is the basic unit of the web server. With a
- * RequestDispatcher, you can add RequestHandler's to handle a specific
- * set of URIs.
- *
- * These functions are normally implemented in classes that are
- * completely independent of RequestDispatcher or Server. That reduces
- * the coupling between the web server library and business logic. You
- * can easier test the #RequestHandler's without mocking any web server
- * objects.
- *
- * Typically you will pass lambda functions to places that expects
- * #RequestHandler's.
- *
- * You don't need to call Connection::Reply() within the handler function.
- * You can also post another callback to the IoService() and reply there.
- * Typically, you can issue another asynchronous operation, and call
- * Connection::Reply() in the completion callback. In that case, make sure
- * to capture the shared_ptr of Connection (i.e. #ConnectionPtr) _by value_
- * in the lambda callback function. Otherwise the Connection objects will
- * be destroyed if the connection is closed by peer or timed out.
- */
+///
+/// A function that handles HTTP requests.
+///
+/// The RequestHandler is the basic unit of the web server. With a
+/// RequestDispatcher, you can add RequestHandler's to handle a specific
+/// set of URIs by Server::AddHandler() and Server::SetDefaultHandler().
+///
+/// These functions are normally implemented in classes that are
+/// completely independent of RequestDispatcher or Server. That reduces
+/// the coupling between the web server library and business logic. You
+/// can easily test the #RequestHandler's without mocking any web server
+/// objects. Typically you will pass lambda functions to places that expects
+/// #RequestHandler's.
+///
+/// The RequestHandler will be called when the server has received all
+/// headers of the HTTP request. It should return a unique_ptr to a
+/// ContentHandler that will process the upcoming content of the
+/// request. The ContentHandler will also provide a Response that will
+/// be replied to the HTTP client. See ContentHandler for more details.
+///
+/// In some cases you want to ignore the Request content and reply a
+/// Response immediately, you can use AdaptToRequestHandler to create
+/// a ContentHandler with a callback function that returns a Response
+/// or future<Response>.
+///
+/// \param Request&     A reference to the Request that is being handled
+/// by this function. The reference will always be valid until the
+/// connection to client is closed. Typically, the connection will be
+/// opened until ContentHandler::OnFinish() is called. You can also
+/// terminates the connection prematurely by returning a Response
+/// during ContentHandler::OnContent().
+///
+/// \return A unique_ptr to ContentHandler. The ownership of the
+/// ContentHandler will be transferred to the Server obviously.
+/// The ContentHandler will handle the content in the HTTP request
+/// and react accordingly.
+///
+/// \sa Server, ContentHandler
+///
 using RequestHandler = std::function<ContentHandlerPtr(Request&)>;
 
 } // end of namespace
