@@ -48,7 +48,12 @@ ContentHandlerPtr ResponseWith(Response&& response)
 class FileUpload : public ContentHandler
 {
 public:
-	explicit FileUpload(const std::string& path) : m_file{path} {}
+	explicit FileUpload(const std::string& path, const Response& success, const Response& failed) :
+		m_file{path},
+		m_success{success},
+		m_failed{failed}
+	{
+	}
 	
 	future<http::Response> OnContent(Request&, const char *data, std::size_t size) override
 	{
@@ -57,16 +62,19 @@ public:
 	}
 	future<http::Response> Finish(Request&) override
 	{
-		return BrightFuture::make_ready_future(http::Response{HTTP_STATUS_OK});
+		return BrightFuture::make_ready_future(
+			std::move(m_file ? m_success : m_failed)
+		);
 	}
 
 private:
 	std::ofstream   m_file;
+	Response m_success, m_failed;
 };
 
-ContentHandlerPtr SaveContentToFile(const std::string& path)
+ContentHandlerPtr SaveContentToFile(const std::string& path, const Response& success, const Response& failed)
 {
-	return std::make_unique<FileUpload>(path);
+	return std::make_unique<FileUpload>(path, success, failed);
 }
 
 RequestHandler::Function RequestHandler::Adapt(Response&& response)

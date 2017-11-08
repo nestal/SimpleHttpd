@@ -51,7 +51,10 @@ using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
 ContentHandlerPtr ResponseWith(const Response& response);
 ContentHandlerPtr ResponseWith(Response&& response);
-ContentHandlerPtr SaveContentToFile(const std::string& path);
+ContentHandlerPtr SaveContentToFile(const std::string& path,
+	const Response& success = Response{HTTP_STATUS_OK},
+	const Response& failed  = Response{HTTP_STATUS_INTERNAL_SERVER_ERROR}
+);
 
 ///
 /// Represents the information required to handle an HTTP request
