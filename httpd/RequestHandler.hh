@@ -62,6 +62,8 @@ public:
 	/// \return  The io_service that runs the Server
 	/// \sa Server::IoService()
 	virtual boost::asio::io_service& IoService() = 0;
+	
+	virtual http::Executor& Executor() = 0;
 };
 
 /**

@@ -59,7 +59,7 @@ public:
 		m_content_handler = m_handler.HandleRequest(*this);
 		if (!m_content_handler)
 		{
-			DoReply({HTTP_STATUS_BAD_REQUEST});
+			SendReply({HTTP_STATUS_BAD_REQUEST});
 			return -1;
 		}
 		else
@@ -76,7 +76,7 @@ public:
 		// pre-mature response indicates an error from the content handler
 		if (response.valid())
 		{
-			TryReply(std::move(response));
+			Reply(std::move(response));
 			return -1;
 		}
 		else
@@ -89,8 +89,13 @@ public:
 		assert(m_content_handler);
 		auto response = m_content_handler->Finish();
 		assert(response.valid());
-		TryReply(std::move(response));
+		Reply(std::move(response));
 		return 0;
+	}
+	
+	http::Executor& Executor() override
+	{
+		return use_service<http::Executor>(IoService());
 	}
 	
 	void Read();
@@ -102,16 +107,16 @@ public:
 			Read();
 	}
 	
-	void TryReply(future<Response> response)
+	void Reply(future<Response> response)
 	{
 		assert(response.valid());
 		response.then([this, self=shared_from_this()](auto fut_reponse)
 		{
-			DoReply(fut_reponse.get());
-		}, use_service<Executor>(IoService()));
+			SendReply(fut_reponse.get());
+		}, Executor());
 	}
 	
-	void DoReply(Response response)
+	void SendReply(Response response)
 	{
 		response.Send(m_socket).then([this, self=shared_from_this()](auto fut_ec)
 		{
@@ -127,7 +132,7 @@ public:
 			
 			if (ec != boost::asio::error::operation_aborted)
 				m_parent.Stop(shared_from_this());
-		}, use_service<Executor>(IoService()));
+		}, Executor());
 	}
 	
 	std::string URL() const override
