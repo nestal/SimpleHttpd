@@ -15,7 +15,6 @@
 #include "ConnectionManager.hh"
 #include "RequestHandler.hh"
 #include "RequestDispatcher.hh"
-#include "Adaptors.hh"
 
 #include <boost/asio.hpp>
 #include <string>
@@ -55,13 +54,13 @@ public:
 	template <typename Callable>
 	void AddHandler(const std::string& uri, Callable&& handler)
 	{
-		m_handlers.Add(uri, MakeHandler(std::forward<Callable>(handler)));
+		m_handlers.Add(uri, std::forward<Callable>(handler));
 	}
 	
 	template <typename Callable>
 	void SetDefaultHandler(Callable&& handler)
 	{
-		m_handlers.SetDefault(MakeHandler(std::forward<Callable>(handler)));
+		m_handlers.SetDefault(std::forward<Callable>(handler));
 	}
 	
 	boost::asio::io_service& IoService();

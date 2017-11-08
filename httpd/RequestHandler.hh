@@ -13,6 +13,7 @@
 #pragma once
 
 #include "Future.hh"
+#include "Response.hh"
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -47,6 +48,19 @@ public:
 	virtual future<Response> Finish(Request& request) = 0;
 };
 using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
+
+class IgnoreContent : public ContentHandler
+{
+public:
+	explicit IgnoreContent(const Response& response);
+	explicit IgnoreContent(Response&& response);
+	
+	future<Response> OnContent(Request&, const char *, std::size_t) override;
+	future<Response> Finish(Request&) override;
+
+private:
+	Response m_response;
+};
 
 ///
 /// Represents the information required to handle an HTTP request
@@ -121,6 +135,103 @@ public:
 ///
 /// \sa Server, ContentHandler
 ///
-using RequestHandler = std::function<ContentHandlerPtr(Request&)>;
+class RequestHandler
+{
+private:
+	using Function = std::function<ContentHandlerPtr(Request&)>;
+	
+	template <typename Callable>
+	class CallableHandler : public ContentHandler
+	{
+	public:
+		CallableHandler(const Callable& h, Request& conn) : m_callable{h}, m_conn{conn} {}
+		
+		future<Response> OnContent(Request&, const char *, std::size_t) override {return {};}
+		future<Response> Finish(Request&) override {return DoFinish();}
+		
+	private:
+		// This overload of DoFinish() will only be enabled if the return value of the "Callable"
+		// functor is a future<Response>.
+		template <typename C=Callable>
+		typename std::enable_if<
+			std::is_same<
+				typename std::result_of<C(Request&)>::type,
+				future<Response>
+			>::value,
+			future<Response>
+		>::type DoFinish()
+		{
+			return m_callable(std::move(m_conn));
+		}
+		
+		// This overload of DoFinish() will only be enabled if the return value of the "Callable"
+		// functor is a Response.
+		template <typename C=Callable>
+		typename std::enable_if<
+			std::is_same<
+				typename std::result_of<C(Request&)>::type,
+				Response
+			>::value,
+			future<Response>
+		>::type	DoFinish()
+		{
+			return BrightFuture::make_ready_future(m_callable(std::move(m_conn)));
+		}
+		
+	private:
+		const Callable& m_callable;
+		Request&        m_conn;
+	};
+	
+	template <typename Callable>
+	typename std::enable_if<
+		!std::is_convertible<
+			typename std::result_of<Callable(Request&)>::type,
+			ContentHandlerPtr
+		>::value,
+		Function
+	>::type Adapt(Callable&& handler)
+	{
+		return [handler=std::forward<Callable>(handler)](Request& conn)
+		{
+			return std::make_unique<CallableHandler<Callable>>(handler, conn);
+		};
+	}
+	
+	// This overload of Adapt() will only be enabled if the return value of the "Callable"
+	// functor is convertible to ContentHandlerPtr.
+	template <typename Callable>
+	typename std::enable_if<
+		std::is_convertible<
+			typename std::result_of<Callable(Request&)>::type,
+			ContentHandlerPtr
+		>::value,
+		Function
+	>::type Adapt(Callable&& handler)
+	{
+		return std::forward<Callable>(handler);
+	}
+	
+	Function Adapt(Response&& response);
+	Function Adapt(const Response& response);
+	Function Adapt(http_status status);
+	
+public:
+	template <typename Callable>
+	RequestHandler(Callable&& callable) : m_func{Adapt(std::forward<Callable>(callable))}
+	{
+	}
+	
+	RequestHandler() = default;
+	RequestHandler(RequestHandler&&) = default;
+	RequestHandler(const RequestHandler&) = default;
+	RequestHandler& operator=(RequestHandler&&) = default;
+	RequestHandler& operator=(const RequestHandler&) = default;
+	
+	ContentHandlerPtr operator()(Request& req) const;
+
+private:
+	Function m_func;
+};
 
 } // end of namespace
