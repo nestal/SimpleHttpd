@@ -22,8 +22,8 @@ class FileUpload : public ContentHandler
 public:
 	FileUpload(const std::string& path);
 	
-	future<http::Response> OnContent(const char *data, std::size_t size) override;
-	future<http::Response> Finish() override;
+	future<http::Response> OnContent(Request&, const char *data, std::size_t size) override;
+	future<http::Response> Finish(Request&) override;
 
 private:
 	std::ofstream   m_file;

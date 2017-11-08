@@ -13,6 +13,8 @@
 #pragma once
 
 #include "RequestHandler.hh"
+#include "Response.hh"
+
 #include <type_traits>
 
 namespace http {
@@ -92,7 +94,8 @@ typename std::enable_if<
 class IgnoreContent : public ContentHandler
 {
 public:
-	IgnoreContent(Response&& response) : m_response{std::move(response)} {}
+	explicit IgnoreContent(const Response& response) : m_response{response} {}
+	explicit IgnoreContent(Response&& response) : m_response{std::move(response)} {}
 	
 	future<Response> OnContent(Request&, const char *, std::size_t) override {return {};}
 	future<Response> Finish(Request&) override {return BrightFuture::make_ready_future(std::move(m_response));}
@@ -108,7 +111,10 @@ typename std::enable_if<
 	RequestHandler
 >::type AdaptToRequestHandler(ResponseT&& response)
 {
-	return std::forward<ResponseT>(response);
+	return [response=std::forward<ResponseT>(response)](Request&)
+	{
+		return std::make_unique<IgnoreContent>(std::forward<decltype(response)>(response));
+	};
 }
 
 } // end of namespace

@@ -21,13 +21,13 @@ FileUpload::FileUpload(const std::string& path) : m_file{path}
 {
 }
 
-future<http::Response> FileUpload::OnContent(const char *data, std::size_t size)
+future<http::Response> FileUpload::OnContent(Request&, const char *data, std::size_t size)
 {
 	m_file.rdbuf()->sputn(data, size);
 	return {};
 }
 
-future<http::Response> FileUpload::Finish()
+future<http::Response> FileUpload::Finish(Request&)
 {
 	return BrightFuture::make_ready_future(http::Response{HTTP_STATUS_OK});
 }
