@@ -69,7 +69,7 @@ typename std::enable_if<
 		ContentHandlerPtr
 	>::value,
 	RequestHandler
->::type AdaptToRequestHandler(Callable&& handler)
+>::type MakeHandler(Callable&& handler)
 {
 	return [handler=std::forward<Callable>(handler)](Request& conn)
 	{
@@ -86,7 +86,7 @@ typename std::enable_if<
 		ContentHandlerPtr
 	>::value,
 	RequestHandler
->::type AdaptToRequestHandler(Callable&& handler)
+>::type MakeHandler(Callable&& handler)
 {
 	return std::forward<Callable>(handler);
 }
@@ -105,16 +105,8 @@ private:
 };
 
 // This overload of Adapt() will only be enabled if the parameter is a Response itself.
-template <typename ResponseT>
-typename std::enable_if<
-	std::is_same<ResponseT, Response>::value,
-	RequestHandler
->::type AdaptToRequestHandler(ResponseT&& response)
-{
-	return [response=std::forward<ResponseT>(response)](Request&)
-	{
-		return std::make_unique<IgnoreContent>(std::forward<decltype(response)>(response));
-	};
-}
+RequestHandler MakeHandler(Response&& response);
+RequestHandler MakeHandler(const Response& response);
+RequestHandler MakeHandler(http_status status);
 
 } // end of namespace

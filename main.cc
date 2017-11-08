@@ -48,7 +48,7 @@ int main()
 		
 		return BrightFuture::make_ready_future(std::move(http::Response{}.SetContent(buf).SetContentType("text/plain")));
 	});
-	s.AddHandler("bad", http::Response{HTTP_STATUS_BAD_REQUEST});
+	s.AddHandler("bad", HTTP_STATUS_BAD_REQUEST);
 	
 	ios.run();
 	return 0;
