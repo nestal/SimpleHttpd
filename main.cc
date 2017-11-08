@@ -16,7 +16,7 @@ int main()
 		std::ostream os{&buf};
 		os << request.URL() << " not found!";
 		
-		return http::Response{HTTP_STATUS_NOT_FOUND}.SetContent(buf);
+		return http::Response{HTTP_STATUS_NOT_FOUND}.SetContent(buf).SetContentType("text/plain");
 	});
 	
 	class EchoContent : public http::ContentHandler
@@ -30,7 +30,7 @@ int main()
 		BrightFuture::future<http::Response> Finish(http::Request&) override
 		{
 			http::Response rep{HTTP_STATUS_OK};
-			rep.SetContent(m_buf);
+			rep.SetContent(m_buf).SetContentType("text/plain");;
 			
 			return BrightFuture::make_ready_future(std::move(rep));
 		}
@@ -46,7 +46,7 @@ int main()
 		std::ostream os{&buf};
 		os << request.URL() << " is requested!";
 		
-		return BrightFuture::make_ready_future(std::move(http::Response{}.SetContent(buf)));
+		return BrightFuture::make_ready_future(std::move(http::Response{}.SetContent(buf).SetContentType("text/plain")));
 	});
 	
 	ios.run();
