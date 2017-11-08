@@ -169,7 +169,7 @@ private:
 			future<Response>
 		>::type	DoFinish()
 		{
-			return BrightFuture::make_ready_future(m_callable(std::move(m_conn)));
+			return BrightFuture::make_ready_future(m_callable(m_conn));
 		}
 		
 	private:
