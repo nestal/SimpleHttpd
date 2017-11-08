@@ -25,12 +25,25 @@ class Response;
 class HeaderList;
 class Method;
 
+///
+/// Abstract interface for handling HTTP request contents.
+///
+/// When you inherit this class and return it from a RequestHandler, the Server will call it to
+/// handle the content of the HTTP request. The data in the HTTP request content will be passed
+/// to OnContent(). After all HTTP request content is received, OnFinish() will be called.
+///
+/// Both OnContent() and Finish() return a future to Response, which will be sent to the client.
+/// If you return a Response in OnContent(), the server will send the response immediately such
+/// that further data in the request content will be ignored. That means OnContent() and Finish()
+/// will not be called. If you want to carry on the content processing, return an invalid future
+/// (i.e. default constructed future<Response>, or just "return {};")
+///
 class ContentHandler
 {
 public:
 	virtual ~ContentHandler() = default;
-	virtual future<http::Response> OnContent(const char *data, std::size_t size) = 0;
-	virtual future<http::Response> Finish() = 0;
+	virtual future<Response> OnContent(const char *data, std::size_t size) = 0;
+	virtual future<Response> Finish() = 0;
 };
 using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
