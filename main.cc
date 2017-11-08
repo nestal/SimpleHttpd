@@ -22,12 +22,12 @@ int main()
 	class EchoContent : public http::ContentHandler
 	{
 	public:
-		BrightFuture::future<http::Response> OnContent(const char *data, std::size_t size) override
+		BrightFuture::future<http::Response> OnContent(http::Request&, const char *data, std::size_t size) override
 		{
 			m_buf.sputn(data, size);
 			return {};
 		}
-		BrightFuture::future<http::Response> Finish() override
+		BrightFuture::future<http::Response> Finish(http::Request&) override
 		{
 			http::Response rep{HTTP_STATUS_OK};
 			rep.SetContent(m_buf);

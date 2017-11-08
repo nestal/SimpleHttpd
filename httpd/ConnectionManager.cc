@@ -71,7 +71,7 @@ public:
 	int OnContent(const char *data, std::size_t size) override
 	{
 		assert(m_content_handler);
-		auto response = m_content_handler->OnContent(data, size);
+		auto response = m_content_handler->OnContent(*this, data, size);
 		
 		// pre-mature response indicates an error from the content handler
 		if (response.valid())
@@ -87,7 +87,7 @@ public:
 	int OnMessageEnd() override
 	{
 		assert(m_content_handler);
-		auto response = m_content_handler->Finish();
+		auto response = m_content_handler->Finish(*this);
 		assert(response.valid());
 		Reply(std::move(response));
 		return 0;

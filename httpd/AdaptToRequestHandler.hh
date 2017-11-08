@@ -23,8 +23,8 @@ class AdaptCallableToContentHandler : public ContentHandler
 public:
 	AdaptCallableToContentHandler(const Callable& h, Request& conn) : m_callable{h}, m_conn{conn} {}
 	
-	future<Response> OnContent(const char *, std::size_t) override {return {};}
-	future<Response> Finish() override {return DoFinish();}
+	future<Response> OnContent(Request&, const char *, std::size_t) override {return {};}
+	future<Response> Finish(Request&) override {return DoFinish();}
 	
 private:
 	// This overload of DoFinish() will only be enabled if the return value of the "Callable"

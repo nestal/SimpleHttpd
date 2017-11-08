@@ -21,6 +21,7 @@
 
 namespace http {
 
+class Request;
 class Response;
 class HeaderList;
 class Method;
@@ -42,8 +43,8 @@ class ContentHandler
 {
 public:
 	virtual ~ContentHandler() = default;
-	virtual future<Response> OnContent(const char *data, std::size_t size) = 0;
-	virtual future<Response> Finish() = 0;
+	virtual future<Response> OnContent(Request& request, const char *data, std::size_t size) = 0;
+	virtual future<Response> Finish(Request& request) = 0;
 };
 using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
