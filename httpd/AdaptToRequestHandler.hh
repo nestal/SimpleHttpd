@@ -89,4 +89,26 @@ typename std::enable_if<
 	return std::forward<Callable>(handler);
 }
 
+class IgnoreContent : public ContentHandler
+{
+public:
+	IgnoreContent(Response&& response) : m_response{std::move(response)} {}
+	
+	future<Response> OnContent(Request&, const char *, std::size_t) override {return {};}
+	future<Response> Finish(Request&) override {return BrightFuture::make_ready_future(std::move(m_response));}
+
+private:
+	Response m_response;
+};
+
+// This overload of Adapt() will only be enabled if the parameter is a Response itself.
+template <typename ResponseT>
+typename std::enable_if<
+	std::is_same<ResponseT, Response>::value,
+	RequestHandler
+>::type AdaptToRequestHandler(ResponseT&& response)
+{
+	return std::forward<ResponseT>(response);
+}
+
 } // end of namespace

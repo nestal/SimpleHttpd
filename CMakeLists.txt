@@ -18,7 +18,7 @@ include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc BrightFuture/executor/BoostAsioExecutor.cc)
+file(GLOB HTTP_LIB_FILES	httpd/*.hh httpd/*.cc common/*.hh common/*.cc BrightFuture/executor/BoostAsioExecutor.cc)
 add_library(httpdlib
     ${HTTP_LIB_FILES}
 	http-parser/http_parser.c http-parser/http_parser.h
