@@ -115,7 +115,9 @@ public:
 /// \return A unique_ptr to ContentHandler. The ownership of the
 /// ContentHandler will be transferred to the Server obviously.
 /// The ContentHandler will handle the content in the HTTP request
-/// and react accordingly.
+/// and react accordingly. If the RequestHandler return a null
+/// pointer, the server will reply "Internal Server Error" (500)
+/// to clients.
 ///
 /// \sa Server, ContentHandler
 ///

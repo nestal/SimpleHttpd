@@ -59,7 +59,7 @@ public:
 		m_content_handler = m_handler.HandleRequest(*this);
 		if (!m_content_handler)
 		{
-			SendReply({HTTP_STATUS_BAD_REQUEST});
+			SendReply({HTTP_STATUS_INTERNAL_SERVER_ERROR});
 			return -1;
 		}
 		else
@@ -103,7 +103,11 @@ public:
 	void OnRead(std::size_t count)
 	{
 		m_parser.Parse(m_read_buffer.begin(), count);
-		if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
+		auto result = m_parser.Result();
+		if (result != HPE_OK && result != HPE_CB_headers_complete && result != HPE_CB_body)
+			SendReply({HTTP_STATUS_BAD_REQUEST});
+			
+		else if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
 			Read();
 	}
 	
@@ -118,6 +122,7 @@ public:
 	
 	void SendReply(Response response)
 	{
+		assert(!m_sent);
 		response.Send(m_socket).then([this, self=shared_from_this()](auto fut_ec)
 		{
 			auto ec = fut_ec.get();
@@ -133,6 +138,7 @@ public:
 			if (ec != boost::asio::error::operation_aborted)
 				m_parent.Stop(shared_from_this());
 		}, Executor());
+		m_sent = true;
 	}
 	
 	std::string URL() const override
@@ -169,6 +175,7 @@ private:
 	boost::asio::ip::tcp::socket m_socket;
 	std::array<char, 1024> m_read_buffer;
 
+	bool            m_sent{false};
 	http::Method    m_method;
 	std::string     m_uri;
 	HeaderList      m_headers;
