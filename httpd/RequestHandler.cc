@@ -12,25 +12,61 @@
 
 #include "RequestHandler.hh"
 
+#include <fstream>
+
 namespace http {
 
-IgnoreContent::IgnoreContent(const Response& response) : m_response{response}
+class IgnoreContent : public ContentHandler
 {
-
-}
-
-IgnoreContent::IgnoreContent(Response&& response) : m_response{std::move(response)}
-{
-}
+public:
+	explicit IgnoreContent(const Response& response) : m_response{response} {}
+	explicit IgnoreContent(Response&& response) : m_response{std::move(response)} {}
 	
-future<Response> IgnoreContent::OnContent(Request&, const char *, std::size_t)
+	future<Response> OnContent(Request&, const char *, std::size_t) override
+	{
+		return {};
+	}
+	future<Response> Finish(Request&) override
+	{
+		return BrightFuture::make_ready_future(std::move(m_response));
+	}
+
+private:
+	Response m_response;
+};
+
+ContentHandlerPtr ResponseWith(const Response& response)
 {
-	return {};
+	return std::make_unique<IgnoreContent>(response);
 }
 
-future<Response> IgnoreContent::Finish(Request&)
+ContentHandlerPtr ResponseWith(Response&& response)
 {
-	return BrightFuture::make_ready_future(std::move(m_response));
+	return std::make_unique<IgnoreContent>(std::move(response));
+}
+
+class FileUpload : public ContentHandler
+{
+public:
+	explicit FileUpload(const std::string& path) : m_file{path} {}
+	
+	future<http::Response> OnContent(Request&, const char *data, std::size_t size) override
+	{
+		m_file.rdbuf()->sputn(data, size);
+		return {};
+	}
+	future<http::Response> Finish(Request&) override
+	{
+		return BrightFuture::make_ready_future(http::Response{HTTP_STATUS_OK});
+	}
+
+private:
+	std::ofstream   m_file;
+};
+
+ContentHandlerPtr SaveContentToFile(const std::string& path)
+{
+	return std::make_unique<FileUpload>(path);
 }
 
 RequestHandler::Function RequestHandler::Adapt(Response&& response)

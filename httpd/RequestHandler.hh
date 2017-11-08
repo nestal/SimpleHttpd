@@ -49,18 +49,9 @@ public:
 };
 using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
-class IgnoreContent : public ContentHandler
-{
-public:
-	explicit IgnoreContent(const Response& response);
-	explicit IgnoreContent(Response&& response);
-	
-	future<Response> OnContent(Request&, const char *, std::size_t) override;
-	future<Response> Finish(Request&) override;
-
-private:
-	Response m_response;
-};
+ContentHandlerPtr ResponseWith(const Response& response);
+ContentHandlerPtr ResponseWith(Response&& response);
+ContentHandlerPtr SaveContentToFile(const std::string& path);
 
 ///
 /// Represents the information required to handle an HTTP request
