@@ -38,8 +38,6 @@ public:
 	
 	Response& SetStatus(http_status status) &;
 	Response&& SetStatus(http_status status) &&;
-	Response& SetContentType(const std::string& type) &;
-	Response&& SetContentType(const std::string& type) &&;
 	Response& AddHeader(const std::string& header, const std::string& value) &;
 	Response&& AddHeader(const std::string& header, const std::string& value) &&;
 
@@ -63,11 +61,8 @@ private:
 	/// Response status, 200=OK
 	http_status m_status{HTTP_STATUS_OK};
 
-	/// The header line of "Content-Length:"
-	std::string m_content_length{"0"};
-	
 	/// The header line of "Content-Type:"
-	std::string m_content_type{"Content-Type: text/html\r\n"};
+	std::string m_content_header{"Content-Type: text/html\r\nContent-Length: 0\r\n"};
 
 	std::string m_other_headers;
 	

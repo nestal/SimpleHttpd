@@ -13,7 +13,6 @@
 #include "Response.hh"
 
 #include <unordered_map>
-#include <iostream>
 
 namespace {
 
@@ -52,8 +51,7 @@ std::vector<const_buffer> Response::ToBuffers() const
 	
 	return {
 		buffer(StatusString(m_status)),
-		buffer(m_content_type),
-		buffer(content_length), buffer(m_content_length), buffer(crlf),
+		buffer(m_content_header),
 		buffer(m_other_headers),
 		buffer(crlf),
 		buffer(m_content)
@@ -69,18 +67,6 @@ Response& Response::SetStatus(http_status status) &
 Response&& Response::SetStatus(http_status status)&&
 {
 	m_status = status;
-	return std::move(*this);
-}
-
-Response& Response::SetContentType(const std::string& type) &
-{
-	m_content_type = "Content-Type: " + type + "\r\n";
-	return *this;
-}
-
-Response&& Response::SetContentType(const std::string& type) &&
-{
-	m_content_type = "Content-Type: " + type + "\r\n";
 	return std::move(*this);
 }
 
@@ -101,8 +87,9 @@ Response& Response::SetContent(std::vector<char>&& buf, const std::string& conte
 	m_content = std::move(buf);
 	
 	// construct Content-Length header with the actual length of content
-	m_content_length = std::to_string(m_content.size());
-	SetContentType(content_type);
+	m_content_header =
+		"Content-Type: " + content_type + "\r\n"
+		"Content-Length: " + std::to_string(m_content.size()) + "\r\n";
 	
 	return *this;
 }
@@ -112,8 +99,9 @@ Response&& Response::SetContent(std::vector<char>&& buf, const std::string& cont
 	m_content = std::move(buf);
 	
 	// construct Content-Length header with the actual length of content
-	m_content_length = std::to_string(m_content.size());
-	SetContentType(content_type);
+	m_content_header =
+		"Content-Type: " + content_type + "\r\n"
+		"Content-Length: " + std::to_string(m_content.size()) + "\r\n";
 	
 	return std::move(*this);
 }
@@ -139,7 +127,6 @@ BrightFuture::future<boost::system::error_code> Response::Send(ip::tcp::socket& 
 	auto promise = std::make_shared<BrightFuture::promise<boost::system::error_code>>();
 	async_write(sock, ToBuffers(), [promise](boost::system::error_code ec, std::size_t count)
 	{
-		std::cout << "on sent(): " << ec << " " << count << " bytes" << std::endl;
 		promise->set_value(ec);
 	});
 	return promise->get_future();

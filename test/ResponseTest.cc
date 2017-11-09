@@ -67,6 +67,7 @@ TEST_CASE("Response normal case", "[normal]")
 	HTTPParser parser{msg};
 	
 	auto str = to_string(subject);
+	INFO("Response is " << str);
 	auto len = parser.Parse(str.c_str(), str.size());
 	CHECK(len == str.size());
 	CHECK(parser.Result() == HPE_OK);
