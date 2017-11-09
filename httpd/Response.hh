@@ -14,7 +14,7 @@
 
 #include "BrightFuture.hh"
 
-#include "http-parser/http_parser.h"
+#include "Enum.hh"
 
 #include <boost/asio.hpp>
 #include <boost/filesystem/path.hpp>
@@ -30,14 +30,14 @@ namespace http {
 class Response
 {
 public:
-	Response(http_status status = HTTP_STATUS_OK);
+	Response(Status status = status_OK);
 	Response(const Response&) = default;
 	Response& operator=(const Response&) = default;
 	Response(Response&&) = default;
 	Response& operator=(Response&&) = default;
 	
-	Response& SetStatus(http_status status) &;
-	Response&& SetStatus(http_status status) &&;
+	Response& SetStatus(Status status) &;
+	Response&& SetStatus(Status status) &&;
 	Response& AddHeader(const std::string& header, const std::string& value) &;
 	Response&& AddHeader(const std::string& header, const std::string& value) &&;
 
@@ -68,7 +68,7 @@ private:
 	
 private:
 	/// Response status, 200=OK
-	http_status m_status{HTTP_STATUS_OK};
+	Status m_status{status_OK};
 
 	/// The header line of "Content-Type:"
 	std::string m_content_header{"Content-Type: text/html\r\nContent-Length: 0\r\n"};

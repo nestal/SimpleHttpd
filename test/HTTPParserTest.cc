@@ -71,7 +71,7 @@ TEST_CASE("HTTPParser GET simple request", "[normal]")
 		CHECK(subject.Result() == HPE_OK);
 		
 		CHECK(result.url == "/some/path/to/url");
-		CHECK(result.method == HTTP_GET);
+		CHECK(result.method == method_GET);
 		CHECK(result.header.Count() == 3);
 		CHECK(result.header.Field("Host") == "localhost:8080");
 	}
@@ -87,7 +87,7 @@ TEST_CASE("HTTPParser GET simple request", "[normal]")
 		CHECK(r2 == size-r);
 		CHECK(subject.Result() == HPE_OK);
 		
-		CHECK(result.method == HTTP_GET);
+		CHECK(result.method == method_GET);
 		CHECK(result.header.Count() == 3);
 	}
 }
@@ -114,6 +114,6 @@ TEST_CASE("HTTPParser POST request content", "[normal]")
 	CHECK(subject.CurrentProgress() == HTTPParser::Progress::finished);
 	CHECK(subject.Result() == HPE_OK);
 	
-	CHECK(result.method == HTTP_POST);
+	CHECK(result.method == method_POST);
 	CHECK(result.content == "hello=world!");
 }

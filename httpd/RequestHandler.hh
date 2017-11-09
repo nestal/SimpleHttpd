@@ -53,8 +53,8 @@ using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 ContentHandlerPtr ResponseWith(const Response& response);
 ContentHandlerPtr ResponseWith(Response&& response);
 ContentHandlerPtr SaveContentToFile(const std::string& path,
-	const Response& success = Response{HTTP_STATUS_OK},
-	const Response& failed  = Response{HTTP_STATUS_INTERNAL_SERVER_ERROR}
+	const Response& success = Response{status_OK},
+	const Response& failed  = Response{status_INTERNAL_SERVER_ERROR}
 );
 
 ///
@@ -209,7 +209,7 @@ private:
 	
 	Function Adapt(Response&& response);
 	Function Adapt(const Response& response);
-	Function Adapt(http_status status);
+	Function Adapt(Status status);
 	
 public:
 	template <typename Callable>

@@ -71,6 +71,6 @@ TEST_CASE("Response normal case", "[normal]")
 	auto len = parser.Parse(str.c_str(), str.size());
 	CHECK(len == str.size());
 	CHECK(parser.Result() == HPE_OK);
-	CHECK(msg.status == HTTP_STATUS_OK);
+	CHECK(msg.status == status_OK);
 	CHECK(msg.content.size() == content_length);
 }

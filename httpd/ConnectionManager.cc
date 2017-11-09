@@ -59,7 +59,7 @@ public:
 		m_content_handler = m_handler.HandleRequest(*this);
 		if (!m_content_handler)
 		{
-			SendReply({HTTP_STATUS_INTERNAL_SERVER_ERROR});
+			SendReply({status_INTERNAL_SERVER_ERROR});
 			return -1;
 		}
 		else
@@ -105,7 +105,7 @@ public:
 		m_parser.Parse(m_read_buffer.begin(), count);
 		auto result = m_parser.Result();
 		if (result != HPE_OK && result != HPE_CB_headers_complete && result != HPE_CB_body)
-			SendReply({HTTP_STATUS_BAD_REQUEST});
+			SendReply({status_BAD_REQUEST});
 			
 		else if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
 			Read();

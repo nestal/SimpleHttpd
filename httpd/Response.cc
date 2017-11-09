@@ -41,7 +41,7 @@ namespace http {
 
 using namespace boost::asio;
 
-Response::Response(http_status s) : m_status{s}
+Response::Response(Status s) : m_status{s}
 {
 }
 
@@ -50,7 +50,7 @@ std::vector<const_buffer> Response::ToBuffers() const
 	static const std::string content_length = "Content-Length: ";
 	
 	return {
-		buffer(StatusString(m_status)),
+		buffer(StatusString(m_status.Get())),
 		buffer(m_content_header),
 		buffer(m_other_headers),
 		buffer(crlf),
@@ -58,13 +58,13 @@ std::vector<const_buffer> Response::ToBuffers() const
 	};
 }
 
-Response& Response::SetStatus(http_status status) &
+Response& Response::SetStatus(Status status) &
 {
 	m_status = status;
 	return *this;
 }
 
-Response&& Response::SetStatus(http_status status)&&
+Response&& Response::SetStatus(Status status)&&
 {
 	m_status = status;
 	return std::move(*this);

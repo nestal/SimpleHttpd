@@ -37,7 +37,7 @@ private:
 	RequestHandler      m_default;
 	ExceptionHandler    m_exception_handler{[](std::exception_ptr)
 	{
-		return ResponseWith({HTTP_STATUS_INTERNAL_SERVER_ERROR});
+		return ResponseWith({status_INTERNAL_SERVER_ERROR});
 	}};
 };
 

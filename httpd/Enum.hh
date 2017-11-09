@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include "http-parser/http_parser.h"
+
 #include <string>
 #include <iosfwd>
 
@@ -20,7 +22,11 @@ namespace http {
 class Method
 {
 public:
-	Method(unsigned parser_enum = 1) : m_parser_enum{parser_enum} {}
+	using Enum = ::http_method;
+	
+public:
+	constexpr explicit Method(Enum parser_enum = static_cast<Enum>(HTTP_GET)) : m_parser_enum{parser_enum} {}
+	constexpr explicit Method(unsigned parser_enum) : m_parser_enum{static_cast<Enum>(parser_enum)} {}
 	
 	friend bool operator==(const Method& lhs, const Method& rhs) {return lhs.m_parser_enum == rhs.m_parser_enum;}
 	friend bool operator!=(const Method& lhs, const Method& rhs) {return lhs.m_parser_enum != rhs.m_parser_enum;}
@@ -30,18 +36,26 @@ public:
 	friend bool operator<=(const Method& lhs, const Method& rhs) {return lhs.m_parser_enum <= rhs.m_parser_enum;}
 	
 	std::string Str() const;
-	unsigned Get() const {return m_parser_enum;}
+	constexpr Enum Get() const {return m_parser_enum;}
 	
 private:
-	unsigned m_parser_enum;
+	Enum m_parser_enum;
 };
+
+#define XX(num, name, string) constexpr Method method_##name{num};
+HTTP_METHOD_MAP(XX)
+#undef XX
 
 std::ostream& operator<<(std::ostream& os, Method method);
 
 class Status
 {
 public:
-	Status(unsigned parser_enum = 1) : m_parser_enum{parser_enum} {}
+	using Enum = ::http_status;
+	
+public:
+	constexpr explicit Status(Enum parser_enum = static_cast<Enum>(HTTP_STATUS_OK)) : m_parser_enum{parser_enum} {}
+	constexpr explicit Status(unsigned parser_enum) : m_parser_enum{static_cast<Enum>(parser_enum)} {}
 	
 	friend bool operator==(const Status& lhs, const Status& rhs) {return lhs.m_parser_enum == rhs.m_parser_enum;}
 	friend bool operator!=(const Status& lhs, const Status& rhs) {return lhs.m_parser_enum != rhs.m_parser_enum;}
@@ -51,11 +65,15 @@ public:
 	friend bool operator<=(const Status& lhs, const Status& rhs) {return lhs.m_parser_enum <= rhs.m_parser_enum;}
 	
 	std::string Str() const;
-	unsigned Get() const {return m_parser_enum;}
+	constexpr Enum Get() const {return m_parser_enum;}
 	
 private:
-	unsigned m_parser_enum;
+	Enum m_parser_enum;
 };
+
+#define XX(num, name, string) constexpr Status status_##name{num};
+HTTP_STATUS_MAP(XX)
+#undef XX
 
 std::ostream& operator<<(std::ostream& os, Status status);
 

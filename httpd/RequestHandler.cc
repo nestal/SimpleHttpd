@@ -93,7 +93,7 @@ RequestHandler::Function RequestHandler::Adapt(const Response& response)
 	};
 }
 
-RequestHandler::Function RequestHandler::Adapt(http_status status)
+RequestHandler::Function RequestHandler::Adapt(Status status)
 {
 	return [status](Request&)
 	{
