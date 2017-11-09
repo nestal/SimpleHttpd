@@ -19,15 +19,43 @@
 #include <iostream>
 using namespace http;
 
+// use HTTPParser to parse it
+struct ParsedResponse : HTTPParser::Callback
+{
+	Status      status{};
+	HeaderList  headers;
+	std::string content;
+	
+	void OnMessageStart(Method, Status s, std::string&&) override
+	{
+		status = s;
+	}
+	void OnHeader(std::string&& field, std::string&& value) override
+	{
+		headers.Add({field, value});
+	}
+	int OnHeaderComplete() override {return 0;}
+	int OnContent(const char *data, std::size_t size) override
+	{
+		content.append(data, size);
+		return 0;
+	}
+	int OnMessageEnd() override {return 0;}
+};
+
 TEST_CASE("Response normal case", "[normal]")
 {
 	Response subject;
+	std::size_t content_length = 0;
 	
 	SECTION("add content")
 	{
 		boost::asio::streambuf sb;
 		std::ostream os{&sb};
 		os << "Hello";
+		
+		content_length = sb.size();
+		
 		subject.SetContent(sb, "text/plain");
 	}
 	SECTION("no content")
@@ -35,31 +63,13 @@ TEST_CASE("Response normal case", "[normal]")
 		subject.SetContent(std::vector<char>{}, "text/plain");
 	}
 	
-	auto s = to_string(subject);
-	std::cout << s << std::endl;
-	
-	// use HTTPParser to parse it
-	struct Message : HTTPParser::Callback
-	{
-		Status      status{};
-		HeaderList  headers;
-		
-		void OnMessageStart(Method, Status st, std::string&&) override
-		{
-			status = st;
-		}
-		void OnHeader(std::string&& field, std::string&& value) override
-		{
-			headers.Add({field, value});
-		}
-		int OnHeaderComplete() override {return 0;}
-		int OnContent(const char *, std::size_t ) override {return 0;}
-		int OnMessageEnd() override {return 0;}
-	} msg;
+	ParsedResponse msg;
 	HTTPParser parser{msg};
 	
-	auto len = parser.Parse(s.c_str(), s.size());
-	CHECK(len == s.size());
+	auto str = to_string(subject);
+	auto len = parser.Parse(str.c_str(), str.size());
+	CHECK(len == str.size());
 	CHECK(parser.Result() == HPE_OK);
 	CHECK(msg.status == HTTP_STATUS_OK);
+	CHECK(msg.content.size() == content_length);
 }
