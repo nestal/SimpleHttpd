@@ -22,11 +22,8 @@
 #include "executor/BoostAsioExecutor.hh"
 
 #include <cassert>
-#include <iostream>
 
 namespace http {
-
-using namespace boost::asio;
 
 class ConnectionManager::Entry :
 	public Request,
@@ -59,7 +56,7 @@ public:
 		m_content_handler = m_handler.HandleRequest(*this);
 		if (!m_content_handler)
 		{
-			SendReply({status_INTERNAL_SERVER_ERROR});
+			SendReply(status_INTERNAL_SERVER_ERROR);
 			return -1;
 		}
 		else
@@ -71,7 +68,7 @@ public:
 	int OnContent(const char *data, std::size_t size) override
 	{
 		assert(m_content_handler);
-		auto response = m_content_handler->OnContent(*this, data, size);
+		auto&& response = m_content_handler->OnContent(*this, data, size);
 		
 		// pre-mature response indicates an error from the content handler
 		if (response.valid())
@@ -87,25 +84,41 @@ public:
 	int OnMessageEnd() override
 	{
 		assert(m_content_handler);
-		auto response = m_content_handler->Finish(*this);
-		assert(response.valid());
-		Reply(std::move(response));
+		Reply(m_content_handler->Finish(*this));
 		return 0;
 	}
 	
 	http::Executor& Executor() override
 	{
-		return use_service<http::Executor>(IoService());
+		return boost::asio::use_service<http::Executor>(IoService());
 	}
 	
-	void Read();
-	void Stop();
+	void Read()
+	{
+		m_socket.async_read_some(
+			boost::asio::buffer(m_read_buffer),
+			[this, self=shared_from_this()](auto error_code, std::size_t count)
+			{
+				if (!error_code)
+					OnRead(count);
+	
+				else if (error_code != boost::asio::error::operation_aborted)
+					m_parent.Stop(shared_from_this());
+			}
+		);
+	}
+	
+	void Stop()
+	{
+		m_socket.close();
+	}
+	
 	void OnRead(std::size_t count)
 	{
 		m_parser.Parse(m_read_buffer.begin(), count);
 		auto result = m_parser.Result();
 		if (result != HPE_OK && result != HPE_CB_headers_complete && result != HPE_CB_body)
-			SendReply({status_BAD_REQUEST});
+			SendReply(status_BAD_REQUEST);
 			
 		else if (m_parser.CurrentProgress() != HTTPParser::Progress::finished)
 			Read();
@@ -120,19 +133,20 @@ public:
 		}, Executor());
 	}
 	
-	void SendReply(Response response)
+	void SendReply(Response&& response)
 	{
+		// keep the response from being destroyed
+		auto spp = std::make_shared<Response>(std::move(response));
+		
 		assert(!m_sent);
-		response.Send(m_socket).then([this, self=shared_from_this()](auto fut_ec)
+		spp->Send(m_socket).then([this, self=shared_from_this(), spp](auto fut_ec)
 		{
 			auto ec = fut_ec.get();
 			if (!ec)
 			{
-				std::cout << "finished connection" << std::endl;
-				
 				// Initiate graceful connection closure.
 				boost::system::error_code ignored_ec;
-				m_socket.shutdown(ip::tcp::socket::shutdown_both, ignored_ec);
+				m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
 			}
 			
 			if (ec != boost::asio::error::operation_aborted)
@@ -156,17 +170,17 @@ public:
 		return m_method;
 	}
 	
-	io_service& IoService() override
+	boost::asio::io_service& IoService() override
 	{
 		return m_socket.get_io_service();
 	}
 	
-	ip::tcp::endpoint Client() const override
+	boost::asio::ip::tcp::endpoint Client() const override
 	{
 		return m_socket.remote_endpoint();
 	}
 	
-	ip::tcp::endpoint Local() const override
+	boost::asio::ip::tcp::endpoint Local() const override
 	{
 		return m_socket.local_endpoint();
 	}
@@ -186,26 +200,6 @@ private:
 	
 	std::unique_ptr<ContentHandler> m_content_handler;
 };
-
-void ConnectionManager::Entry::Read()
-{
-	m_socket.async_read_some(
-		buffer(m_read_buffer),
-		[this, self=shared_from_this()](auto error_code, std::size_t count)
-		{
-			if (!error_code)
-				OnRead(count);
-
-			else if (error_code != boost::asio::error::operation_aborted)
-				m_parent.Stop(shared_from_this());
-		}
-	);
-}
-
-void ConnectionManager::Entry::Stop()
-{
-	m_socket.close();
-}
 
 void ConnectionManager::Start(
 	boost::asio::ip::tcp::socket&&  sock,
