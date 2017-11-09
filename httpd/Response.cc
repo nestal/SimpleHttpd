@@ -122,16 +122,6 @@ Response&& Response::SetContent(const boost::asio::streambuf& buf, const std::st
 	return std::move(SetContent(std::move(content), content_type));
 }
 
-BrightFuture::future<boost::system::error_code> Response::Send(ip::tcp::socket& sock) const
-{
-	auto promise = std::make_shared<BrightFuture::promise<boost::system::error_code>>();
-	async_write(sock, ToBuffers(), [promise](boost::system::error_code ec, std::size_t count)
-	{
-		promise->set_value(ec);
-	});
-	return promise->get_future();
-}
-
 std::ostream& operator<<(std::ostream& os, const Response& e)
 {
 	for (auto&& buf : e.ToBuffers())

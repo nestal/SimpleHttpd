@@ -46,7 +46,16 @@ public:
 	Response&& SetContent(std::vector<char>&& buf, const std::string& content_type) &&;
 	Response&& SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &&;
 	
-	BrightFuture::future<boost::system::error_code> Send(boost::asio::ip::tcp::socket& sock) const;
+	template <typename AsyncWriteStream>
+	auto Send(AsyncWriteStream& sock) const
+	{
+		auto promise = std::make_shared<BrightFuture::promise<boost::system::error_code>>();
+		async_write(sock, ToBuffers(), [promise](boost::system::error_code ec, std::size_t count)
+		{
+			promise->set_value(ec);
+		});
+		return promise->get_future();
+	}
 
 private:
 	/// Convert the reply into a vector of buffers. The buffers do not own the
