@@ -17,7 +17,7 @@
 
 namespace http {
 
-HTTPParser::HTTPParser(RequestCallback& callback) : m_output{callback}
+HTTPParser::HTTPParser(Callback& callback) : m_output{callback}
 {
 	::http_parser_settings_init(&m_setting);
 	m_setting.on_message_begin = [](http_parser*)
@@ -65,7 +65,7 @@ HTTPParser::HTTPParser(RequestCallback& callback) : m_output{callback}
 	};
 	
 	m_parser.data = this;
-	::http_parser_init(&m_parser, HTTP_REQUEST);
+	::http_parser_init(&m_parser, HTTP_BOTH);
 }
 
 std::size_t HTTPParser::Parse(const char *data, std::size_t size)
@@ -79,12 +79,7 @@ int HTTPParser::OnHeaderField(const char *data, std::size_t size)
 	{
 	case HeaderState::none:
 		m_progress = Progress::header;
-		m_output.OnMessageStart(
-			static_cast<http_method >(m_parser.method),
-			std::move(m_url),
-			m_parser.http_major,
-			m_parser.http_minor
-		);
+		m_output.OnMessageStart(Method{m_parser.method}, Status{m_parser.status_code}, std::move(m_url));
 		break;
 	
 	case HeaderState::value:

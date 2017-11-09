@@ -14,6 +14,8 @@
 
 #include "http-parser/http_parser.h"
 
+#include <unordered_map>
+
 namespace http {
 
 std::string Method::Str() const
@@ -24,6 +26,24 @@ std::string Method::Str() const
 std::ostream& operator<<(std::ostream& os, Method method)
 {
 	return os << method.Str();
+}
+
+std::string Status::Str() const
+{
+	static const std::unordered_map<unsigned, std::string> status_map =
+	{
+#define XX(num, name, string) {HTTP_STATUS_##name, "HTTP " #num ": " #string},
+		HTTP_STATUS_MAP(XX)
+#undef XX
+	};
+	
+	auto i = status_map.find(m_parser_enum);
+	return i != status_map.end() ? i->second : "unknown";
+}
+
+std::ostream& operator<<(std::ostream& os, Status status)
+{
+	return os << status.Str();
 }
 
 } // end of namespace

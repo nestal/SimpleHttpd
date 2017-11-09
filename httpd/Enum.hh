@@ -20,7 +20,7 @@ namespace http {
 class Method
 {
 public:
-	Method(int parser_enum = 1) : m_parser_enum{parser_enum} {}
+	Method(unsigned parser_enum = 1) : m_parser_enum{parser_enum} {}
 	
 	friend bool operator==(const Method& lhs, const Method& rhs) {return lhs.m_parser_enum == rhs.m_parser_enum;}
 	friend bool operator!=(const Method& lhs, const Method& rhs) {return lhs.m_parser_enum != rhs.m_parser_enum;}
@@ -30,12 +30,33 @@ public:
 	friend bool operator<=(const Method& lhs, const Method& rhs) {return lhs.m_parser_enum <= rhs.m_parser_enum;}
 	
 	std::string Str() const;
-	int Get() const {return m_parser_enum;}
+	unsigned Get() const {return m_parser_enum;}
 	
 private:
-	int m_parser_enum;
+	unsigned m_parser_enum;
 };
 
 std::ostream& operator<<(std::ostream& os, Method method);
+
+class Status
+{
+public:
+	Status(unsigned parser_enum = 1) : m_parser_enum{parser_enum} {}
+	
+	friend bool operator==(const Status& lhs, const Status& rhs) {return lhs.m_parser_enum == rhs.m_parser_enum;}
+	friend bool operator!=(const Status& lhs, const Status& rhs) {return lhs.m_parser_enum != rhs.m_parser_enum;}
+	friend bool operator> (const Status& lhs, const Status& rhs) {return lhs.m_parser_enum >  rhs.m_parser_enum;}
+	friend bool operator>=(const Status& lhs, const Status& rhs) {return lhs.m_parser_enum >= rhs.m_parser_enum;}
+	friend bool operator< (const Status& lhs, const Status& rhs) {return lhs.m_parser_enum <  rhs.m_parser_enum;}
+	friend bool operator<=(const Status& lhs, const Status& rhs) {return lhs.m_parser_enum <= rhs.m_parser_enum;}
+	
+	std::string Str() const;
+	unsigned Get() const {return m_parser_enum;}
+	
+private:
+	unsigned m_parser_enum;
+};
+
+std::ostream& operator<<(std::ostream& os, Status status);
 
 } // end of namespace

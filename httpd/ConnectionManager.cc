@@ -30,7 +30,7 @@ using namespace boost::asio;
 
 class ConnectionManager::Entry :
 	public Request,
-	public RequestCallback,
+	public HTTPParser::Callback,
 	public std::enable_shared_from_this<Entry>
 {
 public:
@@ -45,7 +45,7 @@ public:
 	}
 	
 	// RequestCallback overrides
-	void OnMessageStart(http::Method method, std::string&& url, int, int) override
+	void OnMessageStart(http::Method method, Status, std::string&& url) override
 	{
 		m_method = method;
 		m_uri    = std::move(url);

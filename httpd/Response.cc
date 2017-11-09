@@ -145,4 +145,21 @@ BrightFuture::future<boost::system::error_code> Response::Send(ip::tcp::socket& 
 	return promise->get_future();
 }
 
+std::ostream& operator<<(std::ostream& os, const Response& e)
+{
+	for (auto&& buf : e.ToBuffers())
+		os.rdbuf()->sputn(buffer_cast<const char*>(buf), buffer_size(buf));
+	return os;
+}
+
+std::string to_string(const Response& e)
+{
+	auto buf = e.ToBuffers();
+	auto len = buffer_size(buf);
+	
+	std::string result(len, '\0');
+	buffer_copy(buffer(&result[0], len), buf);
+	return result;
+}
+
 } // end of namespace

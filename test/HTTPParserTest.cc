@@ -21,14 +21,14 @@
 
 using namespace http;
 
-struct MockRequest : RequestCallback
+struct MockRequest : HTTPParser::Callback
 {
 	Method method;
 	std::string url;
 	HeaderList header;
 	std::string content;
 	
-	void OnMessageStart(http::Method met, std::string&& u, int, int) override
+	void OnMessageStart(http::Method met, http::Status, std::string&& u) override
 	{
 		method = met;
 		url = std::move(u);

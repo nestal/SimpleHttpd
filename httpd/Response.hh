@@ -55,13 +55,16 @@ private:
 	/// underlying memory blocks, therefore the reply object must remain valid and
 	/// not be changed until the write operation has completed.
 	std::vector<boost::asio::const_buffer> ToBuffers() const;
+
+	friend std::ostream& operator<<(std::ostream& os, const Response& e);
+	friend std::string to_string(const Response& e);
 	
 private:
 	/// Response status, 200=OK
 	http_status m_status{HTTP_STATUS_OK};
 
 	/// The header line of "Content-Length:"
-	std::string m_content_length;
+	std::string m_content_length{"0"};
 	
 	/// The header line of "Content-Type:"
 	std::string m_content_type{"Content-Type: text/html\r\n"};

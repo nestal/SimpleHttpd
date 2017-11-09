@@ -19,25 +19,25 @@
 
 namespace http {
 
-class RequestCallback
-{
-public:
-	virtual ~RequestCallback() = default;
-	
-	virtual void OnMessageStart(http::Method method, std::string&& url, int major, int minor) = 0;
-	virtual void OnHeader(std::string&& field, std::string&& value) = 0;
-	virtual int OnHeaderComplete() = 0;
-	virtual int OnContent(const char *data, std::size_t size) = 0;
-	virtual int OnMessageEnd() = 0;
-};
-
 class HTTPParser
 {
 public:
 	enum class Progress {start, header, content, finished};
-	
+
+	class Callback
+	{
+	public:
+		virtual ~Callback() = default;
+		
+		virtual void OnMessageStart(Method method, Status status, std::string&& url) = 0;
+		virtual void OnHeader(std::string&& field, std::string&& value) = 0;
+		virtual int OnHeaderComplete() = 0;
+		virtual int OnContent(const char *data, std::size_t size) = 0;
+		virtual int OnMessageEnd() = 0;
+	};
+
 public:
-	explicit HTTPParser(RequestCallback& callback);
+	explicit HTTPParser(Callback& callback);
 	HTTPParser(HTTPParser&&) = delete;
 	HTTPParser(const HTTPParser&) = delete;
 	HTTPParser& operator=(HTTPParser&&) = delete;
@@ -47,6 +47,9 @@ public:
 	
 	http_errno Result() const;
 	Progress CurrentProgress() const;
+	
+	// Request only
+	const std::string& URL() const { return m_url;}
 	
 private:
 	int OnHeaderField(const char *data, std::size_t size);
@@ -62,8 +65,8 @@ private:
 	enum class HeaderState {field, value, none};
 	HeaderState m_header_state{HeaderState::none};
 	
-	RequestCallback&    m_output;
-	Progress            m_progress{Progress::start};
+	Callback&   m_output;
+	Progress    m_progress{Progress::start};
 	
 	::http_parser_settings  m_setting{};
 	::http_parser           m_parser{};
