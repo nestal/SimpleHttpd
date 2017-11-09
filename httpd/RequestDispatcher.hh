@@ -20,6 +20,7 @@
 
 namespace http {
 
+// nest it!
 class RequestDispatcher
 {
 public:
