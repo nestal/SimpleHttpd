@@ -96,40 +96,42 @@ Response&& Response::AddHeader(const std::string& header, const std::string& val
 	return std::move(*this);
 }
 
-Response& Response::SetContent(std::vector<char>&& buf) &
+Response& Response::SetContent(std::vector<char>&& buf, const std::string& content_type) &
 {
 	m_content = std::move(buf);
 	
 	// construct Content-Length header with the actual length of content
 	m_content_length = std::to_string(m_content.size());
+	SetContentType(content_type);
 	
 	return *this;
 }
 
-Response&& Response::SetContent(std::vector<char>&& buf) &&
+Response&& Response::SetContent(std::vector<char>&& buf, const std::string& content_type) &&
 {
 	m_content = std::move(buf);
 	
 	// construct Content-Length header with the actual length of content
 	m_content_length = std::to_string(m_content.size());
+	SetContentType(content_type);
 	
 	return std::move(*this);
 }
 
-Response& Response::SetContent(const boost::asio::streambuf& buf) &
+Response& Response::SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &
 {
 	std::vector<char> content(buf.size());
 	buffer_copy(boost::asio::buffer(content), buf.data());
 	
-	return SetContent(std::move(content));
+	return SetContent(std::move(content), content_type);
 }
 
-Response&& Response::SetContent(const boost::asio::streambuf& buf) &&
+Response&& Response::SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &&
 {
 	std::vector<char> content(buf.size());
 	buffer_copy(boost::asio::buffer(content), buf.data());
 	
-	return std::move(SetContent(std::move(content)));
+	return std::move(SetContent(std::move(content), content_type));
 }
 
 BrightFuture::future<boost::system::error_code> Response::Send(ip::tcp::socket& sock) const

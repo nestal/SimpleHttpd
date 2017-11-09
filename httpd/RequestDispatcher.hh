@@ -27,13 +27,18 @@ public:
 
 	void Add(const std::string& uri, RequestHandler handler);
 	void SetDefault(RequestHandler handler);
-
+	void SetExceptionHandler(ExceptionHandler handler);
+	
 	ContentHandlerPtr HandleRequest(Request& req) const noexcept ;
 
 private:
 	std::unordered_map<std::string, RequestHandler> m_map;
 
-	RequestHandler m_default;
+	RequestHandler      m_default;
+	ExceptionHandler    m_exception_handler{[](std::exception_ptr)
+	{
+		return ResponseWith({HTTP_STATUS_INTERNAL_SERVER_ERROR});
+	}};
 };
 
 } // end of namespace

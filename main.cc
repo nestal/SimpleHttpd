@@ -16,7 +16,7 @@ int main()
 		std::ostream os{&buf};
 		os << request.URL() << " not found!";
 		
-		return http::Response{HTTP_STATUS_NOT_FOUND}.SetContent(buf).SetContentType("text/plain");
+		return http::Response{HTTP_STATUS_NOT_FOUND}.SetContent(buf, "text/plain");
 	});
 	
 	class EchoContent : public http::ContentHandler
@@ -29,10 +29,9 @@ int main()
 		}
 		BrightFuture::future<http::Response> Finish(http::Request&) override
 		{
-			http::Response rep{HTTP_STATUS_OK};
-			rep.SetContent(m_buf).SetContentType("text/plain");;
-			
-			return BrightFuture::make_ready_future(std::move(rep));
+			return BrightFuture::make_ready_future(
+				http::Response{HTTP_STATUS_OK}.SetContent(m_buf, "text/plain")
+			);
 		}
 		
 	private:
@@ -46,9 +45,10 @@ int main()
 		std::ostream os{&buf};
 		os << request.URL() << " is requested!";
 		
-		return BrightFuture::make_ready_future(http::Response{}.SetContent(buf).SetContentType("text/plain"));
+		return BrightFuture::make_ready_future(http::Response{}.SetContent(buf, "text/plain"));
 	});
 	s.AddHandler("bad", HTTP_STATUS_BAD_REQUEST);
+	s.AddHandler("exception", [](auto&&)->http::ContentHandlerPtr{throw -1;});
 	
 	ios.run();
 	return 0;

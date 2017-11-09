@@ -19,6 +19,7 @@
 #include <boost/asio/ip/tcp.hpp>
 
 #include <memory>
+#include <exception>
 
 namespace http {
 
@@ -227,5 +228,7 @@ public:
 private:
 	Function m_func;
 };
+
+using ExceptionHandler = std::function<ContentHandlerPtr(std::exception_ptr)>;
 
 } // end of namespace

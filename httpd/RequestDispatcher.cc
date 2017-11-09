@@ -23,7 +23,16 @@ ContentHandlerPtr RequestDispatcher::HandleRequest(Request& req) const noexcept
 	
 	auto it = m_map.find(uri[0]);
 	auto& handler = (it == m_map.end() ? m_default : it->second);
-	return handler(req);
+	
+	try
+	{
+		return handler(req);
+	}
+	catch (...)
+	{
+		assert(m_exception_handler);
+		return m_exception_handler(std::current_exception());
+	}
 }
 
 void RequestDispatcher::Add(const std::string& uri, RequestHandler handler)
@@ -34,6 +43,12 @@ void RequestDispatcher::Add(const std::string& uri, RequestHandler handler)
 void RequestDispatcher::SetDefault(RequestHandler handler)
 {
 	m_default = std::move(handler);
+}
+
+void RequestDispatcher::SetExceptionHandler(ExceptionHandler handler)
+{
+	assert(handler);
+	m_exception_handler = std::move(handler);
 }
 
 } // end of namespace

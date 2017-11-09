@@ -30,7 +30,6 @@ namespace http {
 class Response
 {
 public:
-	/// Get a stock reply.
 	Response(http_status status = HTTP_STATUS_OK);
 	Response(const Response&) = default;
 	Response& operator=(const Response&) = default;
@@ -44,10 +43,10 @@ public:
 	Response& AddHeader(const std::string& header, const std::string& value) &;
 	Response&& AddHeader(const std::string& header, const std::string& value) &&;
 
-	Response& SetContent(std::vector<char>&& buf) &;
-	Response& SetContent(const boost::asio::streambuf& buf) &;
-	Response&& SetContent(std::vector<char>&& buf) &&;
-	Response&& SetContent(const boost::asio::streambuf& buf) &&;
+	Response& SetContent(std::vector<char>&& buf, const std::string& content_type) &;
+	Response& SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &;
+	Response&& SetContent(std::vector<char>&& buf, const std::string& content_type) &&;
+	Response&& SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &&;
 	
 	BrightFuture::future<boost::system::error_code> Send(boost::asio::ip::tcp::socket& sock) const;
 

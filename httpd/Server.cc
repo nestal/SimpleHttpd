@@ -90,5 +90,10 @@ io_service& Server::IoService()
 {
 	return m_acceptor.get_io_service();
 }
+
+void Server::SetExceptionHandler(ExceptionHandler handler)
+{
+	m_handlers.SetExceptionHandler(std::move(handler));
+}
 	
 } // end of namespace

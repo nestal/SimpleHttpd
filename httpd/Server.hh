@@ -63,6 +63,8 @@ public:
 		m_handlers.SetDefault(std::forward<Callable>(handler));
 	}
 	
+	void SetExceptionHandler(ExceptionHandler handler);
+	
 	boost::asio::io_service& IoService();
 	
 private:
