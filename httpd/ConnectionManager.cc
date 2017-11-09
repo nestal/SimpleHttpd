@@ -135,7 +135,7 @@ public:
 	
 	void SendReply(Response&& response)
 	{
-		// keep the response from being destroyed
+		// keep the response from being destroyed when the async write is in-flight
 		auto upp = std::make_unique<Response>(std::move(response));
 		
 		assert(!m_sent);
