@@ -17,6 +17,7 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/optional.hpp>
 
 #include <memory>
 #include <exception>
@@ -45,17 +46,13 @@ class ContentHandler
 {
 public:
 	virtual ~ContentHandler() = default;
-	virtual future<Response> OnContent(Request& request, const char *data, std::size_t size) = 0;
-	virtual future<Response> Finish(Request& request) = 0;
+	virtual boost::optional<Response> OnContent(Request& request, const char *data, std::size_t size) = 0;
+	virtual boost::optional<Response> ReplyNow(Request& request) = 0;
+	virtual future<Response> ReplyLater(Request& request) = 0;
 };
 using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
-ContentHandlerPtr ResponseWith(const Response& response);
-ContentHandlerPtr ResponseWith(Response&& response);
-ContentHandlerPtr SaveContentToFile(const std::string& path,
-	const Response& success = Response{status_OK},
-	const Response& failed  = Response{status_INTERNAL_SERVER_ERROR}
-);
+ContentHandlerPtr SaveContentToFile(const std::string& path, const Response& success, const Response& failed);
 
 ///
 /// Represents the information required to handle an HTTP request
@@ -85,6 +82,8 @@ public:
 	/// \return  The io_service that runs the Server
 	/// \sa Server::IoService()
 	virtual boost::asio::io_service& IoService() = 0;
+	
+	virtual void HandleContent(ContentHandlerPtr&& handler) = 0;
 	
 	virtual http::Executor& Executor() = 0;
 };
@@ -133,65 +132,7 @@ public:
 class RequestHandler
 {
 private:
-	using Function = std::function<ContentHandlerPtr(Request&)>;
-	
-	template <typename Callable>
-	class CallableHandler : public ContentHandler
-	{
-	public:
-		CallableHandler(const Callable& h, Request& conn) : m_callable{h}, m_conn{conn} {}
-		
-		future<Response> OnContent(Request&, const char *, std::size_t) override {return {};}
-		future<Response> Finish(Request&) override {return DoFinish();}
-		
-	private:
-		// This overload of DoFinish() will only be enabled if the return value of the "Callable"
-		// functor is a future<Response>.
-		template <typename C=Callable>
-		typename std::enable_if<
-			std::is_same<
-				typename std::result_of<C(Request&)>::type,
-				future<Response>
-			>::value,
-			future<Response>
-		>::type DoFinish()
-		{
-			return m_callable(std::move(m_conn));
-		}
-		
-		// This overload of DoFinish() will only be enabled if the return value of the "Callable"
-		// functor is a Response.
-		template <typename C=Callable>
-		typename std::enable_if<
-			std::is_same<
-				typename std::result_of<C(Request&)>::type,
-				Response
-			>::value,
-			future<Response>
-		>::type	DoFinish()
-		{
-			return BrightFuture::make_ready_future(m_callable(m_conn));
-		}
-		
-	private:
-		const Callable& m_callable;
-		Request&        m_conn;
-	};
-	
-	template <typename Callable>
-	typename std::enable_if<
-		!std::is_convertible<
-			typename std::result_of<Callable(Request&)>::type,
-			ContentHandlerPtr
-		>::value,
-		Function
-	>::type Adapt(Callable&& handler)
-	{
-		return [handler=std::forward<Callable>(handler)](Request& conn)
-		{
-			return std::make_unique<CallableHandler<Callable>>(handler, conn);
-		};
-	}
+	using Function = std::function<Response(Request&)>;
 	
 	// This overload of Adapt() will only be enabled if the return value of the "Callable"
 	// functor is convertible to ContentHandlerPtr.
@@ -199,7 +140,7 @@ private:
 	typename std::enable_if<
 		std::is_convertible<
 			typename std::result_of<Callable(Request&)>::type,
-			ContentHandlerPtr
+			Response
 		>::value,
 		Function
 	>::type Adapt(Callable&& handler)
@@ -212,8 +153,8 @@ private:
 	Function Adapt(Status status);
 	
 public:
-	template <typename Callable>
-	RequestHandler(Callable&& callable) : m_func{Adapt(std::forward<Callable>(callable))}
+	template <typename CallableOrResponse>
+	RequestHandler(CallableOrResponse&& callable) : m_func{Adapt(std::forward<CallableOrResponse>(callable))}
 	{
 	}
 	
@@ -223,12 +164,12 @@ public:
 	RequestHandler& operator=(RequestHandler&&) = default;
 	RequestHandler& operator=(const RequestHandler&) = default;
 	
-	ContentHandlerPtr operator()(Request& req) const;
+	Response operator()(Request& req) const;
 
 private:
 	Function m_func;
 };
 
-using ExceptionHandler = std::function<ContentHandlerPtr(std::exception_ptr)>;
+using ExceptionHandler = std::function<Response(std::exception_ptr)>;
 
 } // end of namespace

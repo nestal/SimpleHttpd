@@ -16,35 +16,6 @@
 
 namespace http {
 
-class IgnoreContent : public ContentHandler
-{
-public:
-	explicit IgnoreContent(const Response& response) : m_response{response} {}
-	explicit IgnoreContent(Response&& response) : m_response{std::move(response)} {}
-	
-	future<Response> OnContent(Request&, const char *, std::size_t) override
-	{
-		return {};
-	}
-	future<Response> Finish(Request&) override
-	{
-		return BrightFuture::make_ready_future(std::move(m_response));
-	}
-
-private:
-	Response m_response;
-};
-
-ContentHandlerPtr ResponseWith(const Response& response)
-{
-	return std::make_unique<IgnoreContent>(response);
-}
-
-ContentHandlerPtr ResponseWith(Response&& response)
-{
-	return std::make_unique<IgnoreContent>(std::move(response));
-}
-
 class FileUpload : public ContentHandler
 {
 public:
@@ -55,16 +26,19 @@ public:
 	{
 	}
 	
-	future<http::Response> OnContent(Request&, const char *data, std::size_t size) override
+	boost::optional<http::Response> OnContent(Request&, const char *data, std::size_t size) override
 	{
 		m_file.rdbuf()->sputn(data, size);
 		return {};
 	}
-	future<http::Response> Finish(Request&) override
+	boost::optional<http::Response> ReplyNow(Request&) override
 	{
-		return BrightFuture::make_ready_future(
-			std::move(m_file ? m_success : m_failed)
-		);
+		return m_file ? m_success : m_failed;
+	}
+	
+	future<Response> ReplyLater(Request& request) override
+	{
+		return {};
 	}
 
 private:
@@ -77,33 +51,24 @@ ContentHandlerPtr SaveContentToFile(const std::string& path, const Response& suc
 	return std::make_unique<FileUpload>(path, success, failed);
 }
 
+Response RequestHandler::operator()(Request& req) const
+{
+	return m_func(req);
+}
+
 RequestHandler::Function RequestHandler::Adapt(Response&& response)
 {
-	return [response=std::move(response)](Request&) mutable
-	{
-		return std::make_unique<IgnoreContent>(std::move(response));
-	};
+	return [response=std::move(response)](Request&){return response;};
 }
 
 RequestHandler::Function RequestHandler::Adapt(const Response& response)
 {
-	return [response](Request&) mutable
-	{
-		return std::make_unique<IgnoreContent>(std::move(response));
-	};
+	return [response](Request&){return response;};
 }
 
 RequestHandler::Function RequestHandler::Adapt(Status status)
 {
-	return [status](Request&)
-	{
-		return std::make_unique<IgnoreContent>(Response{status});
-	};
-}
-
-ContentHandlerPtr RequestHandler::operator()(Request& req) const
-{
-	return m_func(req);
+	return [status](Request&){return Response{status};};
 }
 
 } // end of namespace

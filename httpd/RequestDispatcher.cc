@@ -17,7 +17,7 @@
 
 namespace http {
 
-ContentHandlerPtr RequestDispatcher::HandleRequest(Request& req) const noexcept
+Response RequestDispatcher::HandleRequest(Request& req) const noexcept
 {
 	UriString uri{req.URL()};
 	

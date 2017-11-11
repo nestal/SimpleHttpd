@@ -53,44 +53,47 @@ public:
 	}
 	int OnHeaderComplete() override
 	{
-		m_content_handler = m_handler.HandleRequest(*this);
+		auto&& response = m_handler.HandleRequest(*this);
 		if (!m_content_handler)
-		{
-			SendReply(status_INTERNAL_SERVER_ERROR);
-			return -1;
-		}
-		else
-		{
-			return 0;
-		}
+			SendReply(std::move(response));
+		return 0;
 	}
 	
 	int OnContent(const char *data, std::size_t size) override
 	{
-		assert(m_content_handler);
-		auto&& response = m_content_handler->OnContent(*this, data, size);
-		
-		// pre-mature response indicates an error from the content handler
-		if (response.valid())
+		if (m_content_handler)
 		{
-			Reply(std::move(response));
-			return -1;
+			auto&& opt_response = m_content_handler->OnContent(*this, data, size);
+			if (opt_response)
+			{
+				SendReply(std::move(*opt_response));
+				m_content_handler.reset();
+			}
 		}
-		else
-		{
-			return 0;
-		}
+		return 0;
 	}
 	int OnMessageEnd() override
 	{
-		assert(m_content_handler);
-		Reply(m_content_handler->Finish(*this));
+		if (m_content_handler)
+		{
+			auto&& opt_response = m_content_handler->ReplyNow(*this);
+			if (opt_response)
+				SendReply(std::move(*opt_response));
+			else
+				Reply(m_content_handler->ReplyLater(*this));
+		}
+		
 		return 0;
 	}
 	
 	http::Executor& Executor() override
 	{
 		return boost::asio::use_service<http::Executor>(IoService());
+	}
+	
+	void HandleContent(ContentHandlerPtr&& handler)
+	{
+		m_content_handler = std::move(handler);
 	}
 	
 	void Read()

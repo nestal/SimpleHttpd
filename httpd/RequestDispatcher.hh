@@ -30,7 +30,7 @@ public:
 	void SetDefault(RequestHandler handler);
 	void SetExceptionHandler(ExceptionHandler handler);
 	
-	ContentHandlerPtr HandleRequest(Request& req) const noexcept ;
+	Response HandleRequest(Request& req) const noexcept ;
 
 private:
 	std::unordered_map<std::string, RequestHandler> m_map;
@@ -38,7 +38,7 @@ private:
 	RequestHandler      m_default;
 	ExceptionHandler    m_exception_handler{[](std::exception_ptr)
 	{
-		return ResponseWith({status_INTERNAL_SERVER_ERROR});
+		return Response{status_INTERNAL_SERVER_ERROR};
 	}};
 };
 
