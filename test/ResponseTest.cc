@@ -50,17 +50,16 @@ TEST_CASE("Response normal case", "[normal]")
 	
 	SECTION("add content")
 	{
-		boost::asio::streambuf sb;
-		std::ostream os{&sb};
-		os << "Hello";
+		auto sb = std::make_shared<StreamContent>();
+		*sb << "Hello";
 		
-		content_length = sb.size();
+		content_length = sb->Length();
 		
 		subject.SetContent(sb, "text/plain");
 	}
 	SECTION("no content")
 	{
-		subject.SetContent(std::vector<char>{}, "text/plain");
+		subject.SetContent(std::make_shared<BufferedContent>(), "text/plain");
 	}
 	
 	ParsedResponse msg;

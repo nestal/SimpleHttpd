@@ -13,6 +13,7 @@
 #pragma once
 
 #include <boost/asio.hpp>
+#include <string>
 
 namespace http {
 
@@ -26,6 +27,7 @@ public:
 	
 	virtual void Send(boost::asio::ip::tcp::socket& socket, const WriteHandler& callback) const = 0;
 	virtual std::size_t Length() const = 0;
+	virtual std::string Str() const = 0;
 };
 
 class BufferedContent : public ResponseContent
@@ -37,6 +39,7 @@ public:
 	
 	void Send(boost::asio::ip::tcp::socket& socket, const WriteHandler& callback) const override ;
 	std::size_t Length() const override;
+	std::string Str() const override;
 	
 private:
 	std::vector<char>   m_buffer;
@@ -54,12 +57,15 @@ public:
 		return self;
 	}
 	
+	std::streambuf* rdbuf();
+	
 	void Send(boost::asio::ip::tcp::socket& socket, const WriteHandler& callback) const override ;
 	std::size_t Length() const override;
+	std::string Str() const override;
 	
 private:
-	boost::asio::streambuf  m_buf;
-	std::ostream            m_str{&m_buf};
+	boost::asio::streambuf  m_buffer;
+	std::ostream            m_str{&m_buffer};
 };
 
 } // end of namespace

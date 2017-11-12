@@ -81,50 +81,37 @@ Response&& Response::AddHeader(const std::string& header, const std::string& val
 	return std::move(*this);
 }
 
-Response& Response::SetContent(std::vector<char>&& buf, const std::string& content_type) &
+Response& Response::SetContent(std::shared_ptr<ResponseContent> content, const std::string& content_type) &
 {
-	m_content.Set(std::move(buf));
+	m_content = std::move(content);
 	
 	// construct Content-Length header with the actual length of content
 	m_content_header =
 		"Content-Type: " + content_type + "\r\n"
-		"Content-Length: " + std::to_string(m_content.Length()) + "\r\n";
+		"Content-Length: " + std::to_string(m_content->Length()) + "\r\n";
 	
 	return *this;
 }
 
-Response&& Response::SetContent(std::vector<char>&& buf, const std::string& content_type) &&
+Response&& Response::SetContent(std::shared_ptr<ResponseContent> content, const std::string& content_type) &&
 {
-	m_content.Set(std::move(buf));
+	m_content = std::move(content);
 	
 	// construct Content-Length header with the actual length of content
 	m_content_header =
 		"Content-Type: " + content_type + "\r\n"
-		"Content-Length: " + std::to_string(m_content.Length()) + "\r\n";
+		"Content-Length: " + std::to_string(m_content->Length()) + "\r\n";
 	
 	return std::move(*this);
-}
-
-Response& Response::SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &
-{
-	std::vector<char> content(buf.size());
-	buffer_copy(boost::asio::buffer(content), buf.data());
-	
-	return SetContent(std::move(content), content_type);
-}
-
-Response&& Response::SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &&
-{
-	std::vector<char> content(buf.size());
-	buffer_copy(boost::asio::buffer(content), buf.data());
-	
-	return std::move(SetContent(std::move(content), content_type));
 }
 
 std::ostream& operator<<(std::ostream& os, const Response& e)
 {
 	for (auto&& buf : e.ToBuffers())
 		os.rdbuf()->sputn(buffer_cast<const char*>(buf), buffer_size(buf));
+	if (e.m_content)
+		os << e.m_content->Str();
+		
 	return os;
 }
 
@@ -135,6 +122,10 @@ std::string to_string(const Response& e)
 	
 	std::string result(len, '\0');
 	buffer_copy(buffer(&result[0], len), buf);
+	
+	if (e.m_content)
+		result += e.m_content->Str();
+		
 	return result;
 }
 

@@ -42,10 +42,8 @@ public:
 	Response& AddHeader(const std::string& header, const std::string& value) &;
 	Response&& AddHeader(const std::string& header, const std::string& value) &&;
 
-	Response& SetContent(std::vector<char>&& buf, const std::string& content_type) &;
-	Response& SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &;
-	Response&& SetContent(std::vector<char>&& buf, const std::string& content_type) &&;
-	Response&& SetContent(const boost::asio::streambuf& buf, const std::string& content_type) &&;
+	Response& SetContent(std::shared_ptr<ResponseContent> content, const std::string& content_type) &;
+	Response&& SetContent(std::shared_ptr<ResponseContent> content, const std::string& content_type) &&;
 	
 	template <typename AsyncWriteStream>
 	auto Send(AsyncWriteStream& sock) const
@@ -53,8 +51,8 @@ public:
 		auto promise = std::make_shared<BrightFuture::promise<boost::system::error_code>>();
 		async_write(sock, ToBuffers(), [promise, this, &sock](boost::system::error_code ec, std::size_t count)
 		{
-			if (!ec)
-				m_content.Send(sock, [promise](boost::system::error_code ec, std::size_t)
+			if (!ec && m_content)
+				m_content->Send(sock, [promise](boost::system::error_code ec, std::size_t)
 				{
 					promise->set_value(ec);
 				});
@@ -82,7 +80,7 @@ private:
 
 	std::string m_other_headers;
 	
-	BufferedContent m_content;
+	std::shared_ptr<ResponseContent> m_content;
 };
 
 } // end of namespace

@@ -12,11 +12,10 @@ int main()
 	http::Server s{ios, "0.0.0.0", "8080"};
 	s.SetDefaultHandler([](auto&& request)
 	{
-		boost::asio::streambuf buf;
-		std::ostream os{&buf};
-		os << request.URL() << " not found!";
+		auto sc = std::make_shared<http::StreamContent>();
+		*sc << request.URL() << " not found!";
 		
-		return http::Response{http::status_NOT_FOUND}.SetContent(buf, "text/plain");
+		return http::Response{http::status_NOT_FOUND}.SetContent(sc, "text/plain");
 	});
 	
 	class EchoContent : public http::ContentHandler
@@ -24,7 +23,7 @@ int main()
 	public:
 		boost::optional<http::Response> OnContent(http::Request&, const char *data, std::size_t size) override
 		{
-			m_buf.sputn(data, size);
+			m_buf->rdbuf()->sputn(data, size);
 			return {};
 		}
 		boost::optional<http::Response> ReplyNow(http::Request&) override
@@ -37,7 +36,7 @@ int main()
 		}
 		
 	private:
-		boost::asio::streambuf m_buf;
+		std::shared_ptr<http::StreamContent> m_buf{std::make_shared<http::StreamContent>()};
 	};
 	s.AddHandler("echo", [](auto&& request)
 	{
@@ -47,11 +46,10 @@ int main()
 	
 	s.AddHandler("promise", [](auto&& request)
 	{
-		boost::asio::streambuf buf;
-		std::ostream os{&buf};
-		os << request.URL() << " is requested!";
+		auto sc = std::make_shared<http::StreamContent>();
+		*sc << request.URL() << " is requested!";
 		
-		return http::Response{}.SetContent(buf, "text/plain");
+		return http::Response{}.SetContent(sc, "text/plain");
 	});
 	s.AddHandler("bad", http::status_BAD_REQUEST);
 	s.AddHandler("exception", [](auto&&)->http::Response{throw -1;});
