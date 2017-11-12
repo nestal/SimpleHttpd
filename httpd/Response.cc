@@ -53,8 +53,7 @@ std::vector<const_buffer> Response::ToBuffers() const
 		buffer(StatusString(m_status.Get())),
 		buffer(m_content_header),
 		buffer(m_other_headers),
-		buffer(crlf),
-		buffer(m_content)
+		buffer(crlf)
 	};
 }
 
@@ -84,24 +83,24 @@ Response&& Response::AddHeader(const std::string& header, const std::string& val
 
 Response& Response::SetContent(std::vector<char>&& buf, const std::string& content_type) &
 {
-	m_content = std::move(buf);
+	m_content.Set(std::move(buf));
 	
 	// construct Content-Length header with the actual length of content
 	m_content_header =
 		"Content-Type: " + content_type + "\r\n"
-		"Content-Length: " + std::to_string(m_content.size()) + "\r\n";
+		"Content-Length: " + std::to_string(m_content.Length()) + "\r\n";
 	
 	return *this;
 }
 
 Response&& Response::SetContent(std::vector<char>&& buf, const std::string& content_type) &&
 {
-	m_content = std::move(buf);
+	m_content.Set(std::move(buf));
 	
 	// construct Content-Length header with the actual length of content
 	m_content_header =
 		"Content-Type: " + content_type + "\r\n"
-		"Content-Length: " + std::to_string(m_content.size()) + "\r\n";
+		"Content-Length: " + std::to_string(m_content.Length()) + "\r\n";
 	
 	return std::move(*this);
 }

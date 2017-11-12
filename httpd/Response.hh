@@ -13,6 +13,7 @@
 #pragma once
 
 #include "BrightFuture.hh"
+#include "ResponseContent.hh"
 
 #include "Enum.hh"
 
@@ -50,9 +51,15 @@ public:
 	auto Send(AsyncWriteStream& sock) const
 	{
 		auto promise = std::make_shared<BrightFuture::promise<boost::system::error_code>>();
-		async_write(sock, ToBuffers(), [promise](boost::system::error_code ec, std::size_t count)
+		async_write(sock, ToBuffers(), [promise, this, &sock](boost::system::error_code ec, std::size_t count)
 		{
-			promise->set_value(ec);
+			if (!ec)
+				m_content.Send(sock, [promise](boost::system::error_code ec, std::size_t)
+				{
+					promise->set_value(ec);
+				});
+			else
+				promise->set_value(ec);
 		});
 		return promise->get_future();
 	}
@@ -75,9 +82,7 @@ private:
 
 	std::string m_other_headers;
 	
-	/// The content to be sent in the reply.
-	/// variant<vector, ifstream> ??
-	std::vector<char> m_content;
+	BufferedContent m_content;
 };
 
 } // end of namespace
