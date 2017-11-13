@@ -13,6 +13,7 @@
 #include "Response.hh"
 
 #include <unordered_map>
+#include <ostream>
 
 namespace {
 
@@ -45,7 +46,7 @@ Response::Response(Status s) : m_status{s}
 {
 }
 
-std::vector<const_buffer> Response::ToBuffers() const
+std::vector<const_buffer> Response::HeaderAsBuffers() const
 {
 	static const std::string content_length = "Content-Length: ";
 	
@@ -107,26 +108,18 @@ Response&& Response::SetContent(std::shared_ptr<ResponseContent> content, const 
 
 std::ostream& operator<<(std::ostream& os, const Response& e)
 {
-	for (auto&& buf : e.ToBuffers())
+	for (auto&& buf : e.HeaderAsBuffers())
 		os.rdbuf()->sputn(buffer_cast<const char*>(buf), buffer_size(buf));
-	if (e.m_content)
-		os << e.m_content->Str();
-		
+
+	for (std::size_t pos = 0; pos < e.m_content->Length();)
+	{
+		auto buf = e.m_content->Get(pos);
+		os.rdbuf()->sputn(buffer_cast<const char*>(buf), buffer_size(buf));
+		pos += buffer_size(buf);
+	}
+	
 	return os;
 }
 
-std::string to_string(const Response& e)
-{
-	auto buf = e.ToBuffers();
-	auto len = buffer_size(buf);
-	
-	std::string result(len, '\0');
-	buffer_copy(buffer(&result[0], len), buf);
-	
-	if (e.m_content)
-		result += e.m_content->Str();
-		
-	return result;
-}
 
 } // end of namespace

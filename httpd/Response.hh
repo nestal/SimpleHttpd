@@ -21,7 +21,7 @@
 #include <boost/filesystem/path.hpp>
 
 #include <vector>
-#include <ostream>
+#include <iosfwd>
 
 namespace http {
 
@@ -50,7 +50,7 @@ public:
 	{
 		async_write(
 			sock,
-			ToBuffers(),
+			HeaderAsBuffers(),
 			[callback=std::forward<Callback>(callback), this, &sock](const boost::system::error_code& ec, std::size_t count)
 			{
 				if (!ec && m_content)
@@ -85,10 +85,9 @@ private:
 	/// Convert the reply into a vector of buffers. The buffers do not own the
 	/// underlying memory blocks, therefore the reply object must remain valid and
 	/// not be changed until the write operation has completed.
-	std::vector<boost::asio::const_buffer> ToBuffers() const;
+	std::vector<boost::asio::const_buffer> HeaderAsBuffers() const;
 
 	friend std::ostream& operator<<(std::ostream& os, const Response& e);
-	friend std::string to_string(const Response& e);
 	
 private:
 	/// Response status, 200=OK

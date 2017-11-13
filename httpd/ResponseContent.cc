@@ -24,11 +24,6 @@ std::size_t BufferedContent::Length() const
 	return m_buffer.size();
 }
 
-std::string BufferedContent::Str() const
-{
-	return std::string(m_buffer.begin(), m_buffer.end());
-}
-
 boost::asio::const_buffer BufferedContent::Get(std::size_t start) const
 {
 	return {&m_buffer[start], m_buffer.size() - start};
@@ -42,13 +37,6 @@ std::size_t StreamContent::Length() const
 std::streambuf* StreamContent::rdbuf()
 {
 	return &m_buffer;
-}
-
-std::string StreamContent::Str() const
-{
-	std::string str(m_buffer.size(), '\0');
-	buffer_copy(boost::asio::buffer(&str[0], str.size()), m_buffer.data());
-	return str;
 }
 
 boost::asio::const_buffer StreamContent::Get(std::size_t start) const
@@ -66,15 +54,11 @@ std::size_t FileContent::Length() const
 	throw -1;
 }
 
-std::string FileContent::Str() const
-{
-	// not implemented yet
-	throw -1;
-}
-
 boost::asio::const_buffer FileContent::Get(std::size_t start) const
 {
-	assert(start == static_cast<std::size_t>(m_file.tellg()));
+	if (start != static_cast<std::size_t>(m_file.tellg()))
+		m_file.seekg(start);
+		
 	auto count = m_file.rdbuf()->sgetn(&m_buffer[0], m_buffer.size());
 	
 	return {&m_buffer[0], static_cast<std::size_t>(count)};

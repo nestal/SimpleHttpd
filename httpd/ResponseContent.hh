@@ -29,7 +29,6 @@ public:
 	
 	virtual boost::asio::const_buffer Get(std::size_t start) const = 0;
 	virtual std::size_t Length() const = 0;
-	virtual std::string Str() const = 0;
 };
 
 class BufferedContent : public ResponseContent
@@ -41,7 +40,6 @@ public:
 	
 	boost::asio::const_buffer Get(std::size_t start) const override;
 	std::size_t Length() const override;
-	std::string Str() const override;
 	
 private:
 	std::vector<char>   m_buffer;
@@ -63,7 +61,6 @@ public:
 	
 	boost::asio::const_buffer Get(std::size_t start) const override;
 	std::size_t Length() const override;
-	std::string Str() const override;
 	
 private:
 	boost::asio::streambuf  m_buffer;
@@ -77,7 +74,6 @@ public:
 
 	boost::asio::const_buffer Get(std::size_t start) const override;
 	std::size_t Length() const override;
-	std::string Str() const override;
 	
 private:
 	mutable std::array<char, 1024>  m_buffer;
