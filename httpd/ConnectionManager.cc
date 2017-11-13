@@ -139,12 +139,11 @@ public:
 	void SendReply(Response&& response)
 	{
 		// keep the response from being destroyed when the async write is in-flight
-		auto upp = std::make_unique<Response>(std::move(response));
+		auto spp = std::make_shared<Response>(std::move(response));
 		
 		assert(!m_sent);
-		upp->Send(m_socket).then([this, self=shared_from_this(), upp=std::move(upp)](auto fut_ec)
+		spp->Send(m_socket, [this, self=shared_from_this(), spp](auto ec, auto)
 		{
-			auto ec = fut_ec.get();
 			if (!ec)
 			{
 				// Initiate graceful connection closure.
@@ -154,7 +153,7 @@ public:
 			
 			if (ec != boost::asio::error::operation_aborted)
 				m_parent.Stop(shared_from_this());
-		}, Executor());
+		});
 		m_sent = true;
 	}
 	

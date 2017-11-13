@@ -5,8 +5,6 @@
 
 int main()
 {
-	std::cout << "Hello, World! " << std::endl;
-
 	boost::asio::io_service ios;
 
 	http::Server s{ios, "0.0.0.0", "8080"};
@@ -15,7 +13,7 @@ int main()
 		auto sc = std::make_shared<http::StreamContent>();
 		*sc << request.URL() << " not found!";
 		
-		return http::Response{http::status_NOT_FOUND}.SetContent(sc, "text/plain");
+		return http::Response{http::status_NOT_FOUND}.SetContent(std::move(sc), "text/plain");
 	});
 	
 	class EchoContent : public http::ContentHandler
@@ -49,7 +47,7 @@ int main()
 		auto sc = std::make_shared<http::StreamContent>();
 		*sc << request.URL() << " is requested!";
 		
-		return http::Response{}.SetContent(sc, "text/plain");
+		return http::Response{}.SetContent(std::move(sc), "text/plain");
 	});
 	s.AddHandler("bad", http::status_BAD_REQUEST);
 	s.AddHandler("exception", [](auto&&)->http::Response{throw -1;});

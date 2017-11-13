@@ -29,6 +29,9 @@ target_link_libraries(httpdlib
 	Boost::system
 	Boost::filesystem
 )
+if (CMAKE_COMPILER_IS_GNUCC)
+	target_compile_options(httpdlib PRIVATE "-Wall")
+endif()
 
 set(SOURCE_FILES main.cc)
 add_executable(SimpleHttp ${SOURCE_FILES})

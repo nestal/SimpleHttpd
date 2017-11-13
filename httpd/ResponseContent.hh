@@ -27,7 +27,7 @@ public:
 public:
 	virtual ~ResponseContent() = default;
 	
-	virtual void Send(boost::asio::ip::tcp::socket& socket, const WriteHandler& callback) = 0;
+	virtual boost::asio::const_buffer Get(std::size_t start) const = 0;
 	virtual std::size_t Length() const = 0;
 	virtual std::string Str() const = 0;
 };
@@ -39,7 +39,7 @@ public:
 	
 	void Set(std::vector<char>&& buf);
 	
-	void Send(boost::asio::ip::tcp::socket& socket, const WriteHandler& callback) override ;
+	boost::asio::const_buffer Get(std::size_t start) const override;
 	std::size_t Length() const override;
 	std::string Str() const override;
 	
@@ -61,7 +61,7 @@ public:
 	
 	std::streambuf* rdbuf();
 	
-	void Send(boost::asio::ip::tcp::socket& socket, const WriteHandler& callback) override ;
+	boost::asio::const_buffer Get(std::size_t start) const override;
 	std::size_t Length() const override;
 	std::string Str() const override;
 	
@@ -75,13 +75,13 @@ class FileContent : public ResponseContent
 public:
 	explicit FileContent(boost::filesystem::path path);
 
-	void Send(boost::asio::ip::tcp::socket& socket, const WriteHandler& callback) override ;
+	boost::asio::const_buffer Get(std::size_t start) const override;
 	std::size_t Length() const override;
 	std::string Str() const override;
 	
 private:
-	std::array<char, 1024>  m_buffer;
-	std::ifstream           m_file;
+	mutable std::array<char, 1024>  m_buffer;
+	mutable std::ifstream           m_file;
 };
 
 } // end of namespace

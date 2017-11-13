@@ -45,23 +45,42 @@ public:
 	Response& SetContent(std::shared_ptr<ResponseContent> content, const std::string& content_type) &;
 	Response&& SetContent(std::shared_ptr<ResponseContent> content, const std::string& content_type) &&;
 	
-	template <typename AsyncWriteStream>
-	auto Send(AsyncWriteStream& sock) const
+	template <typename AsyncWriteStream, typename Callback>
+	void Send(AsyncWriteStream& sock, Callback&& callback) const
 	{
-		auto promise = std::make_shared<BrightFuture::promise<boost::system::error_code>>();
-		async_write(sock, ToBuffers(), [promise, this, &sock](boost::system::error_code ec, std::size_t count)
-		{
-			if (!ec && m_content)
-				m_content->Send(sock, [promise](boost::system::error_code ec, std::size_t)
-				{
-					promise->set_value(ec);
-				});
-			else
-				promise->set_value(ec);
-		});
-		return promise->get_future();
+		async_write(
+			sock,
+			ToBuffers(),
+			[callback=std::forward<Callback>(callback), this, &sock](const boost::system::error_code& ec, std::size_t count)
+			{
+				if (!ec && m_content)
+					SendContent(sock, 0, std::forward<decltype(callback)>(callback), count);
+				else
+					callback(ec, count);
+			});
 	}
 
+private:
+	template <typename AsyncWriteStream, typename Callback>
+	void SendContent(AsyncWriteStream& sock, std::size_t pos, Callback&& callback, std::size_t header_size) const
+	{
+		if (pos < m_content->Length())
+			async_write(
+				sock,
+				buffer(m_content->Get(pos)),
+				[&sock, callback=std::forward<decltype(callback)>(callback), this, pos, header_size](const boost::system::error_code& ec, std::size_t count)
+				{
+					auto next = pos + count;
+					if (!ec)
+						callback(ec, header_size+next);
+					else
+						SendContent(sock, next, callback, header_size);
+				}
+			);
+		else
+			callback(boost::system::error_code{}, header_size);
+	}
+	
 private:
 	/// Convert the reply into a vector of buffers. The buffers do not own the
 	/// underlying memory blocks, therefore the reply object must remain valid and

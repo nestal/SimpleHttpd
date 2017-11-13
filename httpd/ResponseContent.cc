@@ -19,11 +19,6 @@ void BufferedContent::Set(std::vector<char>&& buf)
 	m_buffer = std::move(buf);
 }
 
-void BufferedContent::Send(boost::asio::ip::tcp::socket& socket, const ResponseContent::WriteHandler& callback)
-{
-	async_write(socket, boost::asio::buffer(m_buffer), callback);
-}
-
 std::size_t BufferedContent::Length() const
 {
 	return m_buffer.size();
@@ -34,9 +29,9 @@ std::string BufferedContent::Str() const
 	return std::string(m_buffer.begin(), m_buffer.end());
 }
 
-void StreamContent::Send(boost::asio::ip::tcp::socket& socket, const ResponseContent::WriteHandler& callback)
+boost::asio::const_buffer BufferedContent::Get(std::size_t start) const
 {
-	async_write(socket, m_buffer.data(), callback);
+	return {&m_buffer[start], m_buffer.size() - start};
 }
 
 std::size_t StreamContent::Length() const
@@ -44,7 +39,7 @@ std::size_t StreamContent::Length() const
 	return m_buffer.size();
 }
 
-std::streambuf *StreamContent::rdbuf()
+std::streambuf* StreamContent::rdbuf()
 {
 	return &m_buffer;
 }
@@ -56,27 +51,13 @@ std::string StreamContent::Str() const
 	return str;
 }
 
-FileContent::FileContent(boost::filesystem::path path) : m_file{path.string()}
+boost::asio::const_buffer StreamContent::Get(std::size_t start) const
 {
+	return start == 0 ? m_buffer.data() : boost::asio::const_buffer{};
 }
 
-void FileContent::Send(boost::asio::ip::tcp::socket& socket, const ResponseContent::WriteHandler& callback)
+FileContent::FileContent(boost::filesystem::path path) : m_file{path.string()}
 {
-	auto count = m_file.rdbuf()->sgetn(&m_buffer[0], m_buffer.size());
-	if (count > 0)
-		async_write(
-			socket,
-			boost::asio::buffer(&m_buffer[0], count),
-			[&socket, callback, this](const boost::system::error_code& ec, std::size_t)
-			{
-				if (!ec)
-					callback(ec, 0);
-				else
-					Send(socket, callback);
-			}
-		);
-	else
-		callback({}, 0);
 }
 
 std::size_t FileContent::Length() const
@@ -89,6 +70,14 @@ std::string FileContent::Str() const
 {
 	// not implemented yet
 	throw -1;
+}
+
+boost::asio::const_buffer FileContent::Get(std::size_t start) const
+{
+	assert(start == static_cast<std::size_t>(m_file.tellg()));
+	auto count = m_file.rdbuf()->sgetn(&m_buffer[0], m_buffer.size());
+	
+	return {&m_buffer[0], static_cast<std::size_t>(count)};
 }
 
 } // end of namespace
