@@ -139,10 +139,10 @@ public:
 	void SendReply(Response&& response)
 	{
 		// keep the response from being destroyed when the async write is in-flight
-		auto spp = std::make_shared<Response>(std::move(response));
+		m_response = std::move(response);
 		
 		assert(!m_sent);
-		spp->Send(m_socket, [this, self=shared_from_this(), spp](auto ec, auto)
+		m_response.Send(m_socket, [this, self=shared_from_this()](auto ec, auto)
 		{
 			if (!ec)
 			{
@@ -195,6 +195,7 @@ private:
 	http::Method    m_method;
 	std::string     m_uri;
 	HeaderList      m_headers;
+	Response        m_response;
 
 	ConnectionManager&  m_parent;
 	HTTPParser          m_parser{*this};
