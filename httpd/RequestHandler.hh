@@ -18,6 +18,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/optional.hpp>
+#include <boost/utility/string_view.hpp>
 
 #include <memory>
 #include <exception>
@@ -66,7 +67,7 @@ ContentHandlerPtr SaveContentToFile(const std::string& path, const Response& suc
 class Request
 {
 public:
-	virtual std::string URL() const = 0;
+	virtual boost::string_view URL() const = 0;
 	virtual const HeaderList& Header() const = 0;
 	virtual http::Method Method() const = 0;
 

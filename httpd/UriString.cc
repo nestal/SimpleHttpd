@@ -11,7 +11,7 @@
 
 namespace http {
 
-std::string UriString::operator[](std::size_t idx) const
+boost::string_view UriString::operator[](std::size_t idx) const
 {
 	if (m_uri.empty() || m_uri.front() != '/')
 		return "";
@@ -26,12 +26,12 @@ std::string UriString::operator[](std::size_t idx) const
 		--idx;
 	}
 
-	return idx == 0 ? std::string(m_uri, pos, end != m_uri.npos ? end - pos : m_uri.npos) : "";
+	return idx == 0 ? m_uri.substr(pos, end != m_uri.npos ? end - pos : m_uri.npos) : boost::string_view{};
 }
 
-const std::string& UriString::Str() const
+std::string UriString::Str() const
 {
-	return m_uri;
+	return m_uri.to_string();
 }
 
 std::ostream& operator<<(std::ostream& os, const UriString& uri)

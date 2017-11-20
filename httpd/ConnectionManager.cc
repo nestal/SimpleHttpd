@@ -157,7 +157,7 @@ public:
 		m_sent = true;
 	}
 	
-	std::string URL() const override
+	boost::string_view URL() const override
 	{
 		return m_uri;
 	}

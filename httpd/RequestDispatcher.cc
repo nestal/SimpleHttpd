@@ -21,7 +21,7 @@ Response RequestDispatcher::HandleRequest(Request& req) const noexcept
 {
 	UriString uri{req.URL()};
 	
-	auto it = m_map.find(uri[0]);
+	auto it = m_map.find(uri[0].to_string());
 	auto& handler = (it == m_map.end() ? m_default : it->second);
 	
 	try

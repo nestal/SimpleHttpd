@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <boost/utility/string_view.hpp>
 #include <string>
 #include <iosfwd>
 
@@ -31,11 +32,11 @@ public:
 	UriString& operator=(const UriString&) = default;
 	UriString& operator=(UriString&&) = default;
 	
-	UriString(std::string&& uri) : m_uri{std::move(uri)}
+	UriString(const std::string& uri) : m_uri{uri}
 	{
 	}
 	
-	UriString(const std::string& uri) : m_uri{uri}
+	UriString(boost::string_view uri) : m_uri{uri}
 	{
 	}
 
@@ -44,18 +45,12 @@ public:
 	{
 	}
 	
-	std::string operator[](std::size_t idx) const;
+	boost::string_view operator[](std::size_t idx) const;
 
-	const std::string& Str() const;
+	std::string Str() const;
 	
-	template <typename T>
-	void Str(T&& str)
-	{
-		m_uri = std::forward<T>(str);
-	}
-
 private:
-	std::string m_uri;
+	boost::string_view m_uri;
 };
 
 std::ostream& operator<<(std::ostream& os, const UriString& uri);
