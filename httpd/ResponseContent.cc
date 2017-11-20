@@ -34,11 +34,6 @@ std::size_t StreamContent::Length() const
 	return m_buffer.size();
 }
 
-std::streambuf* StreamContent::rdbuf()
-{
-	return &m_buffer;
-}
-
 boost::asio::const_buffer StreamContent::Get(std::size_t start) const
 {
 	return start == 0 ? m_buffer.data() : boost::asio::const_buffer{};
