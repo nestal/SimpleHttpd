@@ -32,10 +32,6 @@ public:
 	UriString& operator=(const UriString&) = default;
 	UriString& operator=(UriString&&) = default;
 	
-	UriString(const std::string& uri) : m_uri{uri}
-	{
-	}
-	
 	UriString(boost::string_view uri) : m_uri{uri}
 	{
 	}

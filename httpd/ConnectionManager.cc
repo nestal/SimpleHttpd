@@ -152,7 +152,7 @@ public:
 			}
 			
 			if (ec != boost::asio::error::operation_aborted)
-				m_parent.Stop(shared_from_this());
+				m_parent.Stop(self);
 		});
 		m_sent = true;
 	}

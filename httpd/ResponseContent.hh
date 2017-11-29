@@ -57,6 +57,8 @@ public:
 		return self;
 	}
 	
+	std::streambuf* rdbuf();
+	
 	boost::asio::const_buffer Get(std::size_t start) const override;
 	std::size_t Length() const override;
 	
