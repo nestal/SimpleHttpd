@@ -13,17 +13,19 @@
 #include "RequestHandler.hh"
 
 #include <fstream>
+#include <iostream>
 
 namespace http {
 
 class FileUpload : public ContentHandler
 {
 public:
-	explicit FileUpload(const std::string& path, const Response& success, const Response& failed) :
-		m_file{path},
-		m_success{success},
-		m_failed{failed}
+	explicit FileUpload(const std::string& path, UploadCallback&& response) :
+		m_file{path, std::ios::in|std::ios::out|std::ios::trunc},
+		m_response{std::move(response)}
 	{
+		if (!m_file)
+			std::cerr << "cannot open " << path << "! " << strerror(errno) << std::endl;
 	}
 	
 	boost::optional<http::Response> OnContent(Request&, const char *data, std::size_t size) override
@@ -31,9 +33,9 @@ public:
 		m_file.rdbuf()->sputn(data, size);
 		return {};
 	}
-	boost::optional<http::Response> ReplyNow(Request&) override
+	boost::optional<http::Response> ReplyNow(Request& req) override
 	{
-		return m_file ? m_success : m_failed;
+		return m_response(req, m_file);
 	}
 	
 	future<Response> ReplyLater(Request& request) override
@@ -42,13 +44,13 @@ public:
 	}
 
 private:
-	std::ofstream   m_file;
-	Response m_success, m_failed;
+	std::fstream    m_file;
+	UploadCallback  m_response;
 };
 
-ContentHandlerPtr SaveContentToFile(const std::string& path, const Response& success, const Response& failed)
+ContentHandlerPtr SaveContentToFile(const std::string& path, UploadCallback&& response)
 {
-	return std::make_unique<FileUpload>(path, success, failed);
+	return std::make_unique<FileUpload>(path, std::move(response));
 }
 
 Response RequestHandler::operator()(Request& req) const

@@ -53,6 +53,8 @@ public:
 	template <typename T>
 	friend StreamContent& operator<<(StreamContent& self, T&& t)
 	{
+		assert(!!self.m_str);
+		
 		self.m_str << std::forward<T>(t);
 		return self;
 	}

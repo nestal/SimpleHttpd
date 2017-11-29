@@ -53,7 +53,9 @@ public:
 };
 using ContentHandlerPtr = std::unique_ptr<ContentHandler>;
 
-ContentHandlerPtr SaveContentToFile(const std::string& path, const Response& success, const Response& failed);
+using UploadCallback = std::function<Response(Request&, std::fstream&)>;
+
+ContentHandlerPtr SaveContentToFile(const std::string& path, UploadCallback&& response);
 
 ///
 /// Represents the information required to handle an HTTP request

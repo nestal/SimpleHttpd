@@ -15,6 +15,8 @@
 #include "Response.hh"
 #include "UriString.hh"
 
+#include <iostream>
+
 namespace http {
 
 Response RequestDispatcher::HandleRequest(Request& req) const noexcept
@@ -30,6 +32,8 @@ Response RequestDispatcher::HandleRequest(Request& req) const noexcept
 	}
 	catch (...)
 	{
+		std::cerr << "Exception occurred!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+		
 		assert(m_exception_handler);
 		return m_exception_handler(std::current_exception());
 	}
